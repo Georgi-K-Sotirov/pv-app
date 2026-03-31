@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>PV Калкулатор</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <meta name="theme-color" content="#2e7d32">
+</head>
+<style>
+body {
+    font-family: Arial;
+    background: #f2f2f2;
+    padding: 15px;
+}
+.container {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+}
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 15px;
+    font-size: 16px;
+}
+button {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    background: #2e7d32;
+    color: white;
+    border: none;
+    border-radius: 8px;
+}
+.result {
+    margin-top: 15px;
+    background: #eee;
+    padding: 10px;
+    white-space: pre-line;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>PV Калкулатор</h2>
+
+<input id="area" placeholder="Площ m²" value="35">
+<input id="factor" placeholder="Използваемост" value="0.75">
+<input id="density" placeholder="Плътност" value="0.21">
+
+<input id="price_small" placeholder="до 15 kWp" value="1500">
+<input id="price_medium" placeholder="до 50 kWp" value="1100">
+<input id="price_large" placeholder="над 50 kWp" value="950">
+
+<select id="battery">
+<option value="yes">С батерия</option>
+<option value="no">Без батерия</option>
+</select>
+
+<input id="battery_price" value="5000">
+<input id="price_kwh" value="0.13">
+
+<button onclick="calc()">Смятай</button>
+
+<div class="result" id="result"></div>
+
+</div>
+
+<script>
+function calc() {
+let kwp = area.value * factor.value * density.value;
+
+let price = kwp <= 15 ? price_small.value :
+            kwp <= 50 ? price_medium.value :
+            price_large.value;
+
+let total = kwp * price;
+
+let self = battery.value == "yes" ? 0.75 : 0.45;
+
+if (battery.value == "yes") total += +battery_price.value;
+
+let yearly = kwp * 1350;
+let savings = yearly * self * price_kwh.value;
+
+result.innerText =
+`kWp: ${kwp.toFixed(2)}
+Цена: ${total.toFixed(0)} €
+Икономия: ${savings.toFixed(0)} €
+Възвръщаемост: ${(total/savings).toFixed(1)} г.`;
+}
+</script>
+
+</body>
+</html>
