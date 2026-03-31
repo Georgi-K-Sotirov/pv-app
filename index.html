@@ -57,10 +57,27 @@ margin-top:10px;
 <h2>PV Калкулатор</h2>
 
 <h3>Данни за оферта</h3>
+
+<label>Обръщение</label>
+<select id="salutation">
+  <option value="mr">г-н</option>
+  <option value="mrs">г-жа</option>
+  <option value="neutral">г-н/г-жа</option>
+  <option value="none">без обръщение</option>
+</select>
+
 <label>Клиент</label>
 <input id="client_name" placeholder="Име на клиент">
+
 <label>Обект</label>
 <input id="project_name" placeholder="Адрес / обект">
+
+<label>Вариант за оферта</label>
+<select id="offer_variant">
+  <option value="auto">Автоматично</option>
+  <option value="no_battery">Без батерия</option>
+  <option value="with_battery">С батерия</option>
+</select>
 
 <h3>Покрив</h3>
 <label>Площ (m²)</label>
@@ -227,8 +244,27 @@ function generatePDF() {
   const d = getData();
 
   const client = document.getElementById("client_name").value || "Клиент";
-  const attention = client;
   const project = document.getElementById("project_name").value || "-";
+  const salutation = document.getElementById("salutation").value;
+  const offerVariant = document.getElementById("offer_variant").value;
+
+  let attention = client;
+  let greeting = "";
+  let attentionLabel = "";
+
+  if (salutation === "mr") {
+    attentionLabel = `г-н ${client}`;
+    greeting = `Уважаеми г-н ${client},`;
+  } else if (salutation === "mrs") {
+    attentionLabel = `г-жа ${client}`;
+    greeting = `Уважаема г-жо ${client},`;
+  } else if (salutation === "neutral") {
+    attentionLabel = client;
+    greeting = `Уважаеми/а ${client},`;
+  } else {
+    attentionLabel = client;
+    greeting = `Уважаеми клиенти,`;
+  }
 
   const today = new Date();
   const dateStr = today.toLocaleDateString("bg-BG");
@@ -241,8 +277,20 @@ function generatePDF() {
   const outNumber = `${randomPart}/${dateStr}`;
   const offerNumber = `BUG${yyyy}${mm}${dd}${randomPart}`;
 
-  const useBatteryVariant = d.payBat <= d.payNo + 3 && d.profitBat >= d.profitNo;
-  const selectedTotalNoVat = useBatteryVariant ? (d.base + (+battery_price.value || 0)) : d.base;
+  let useBatteryVariant = false;
+
+  if (offerVariant === "with_battery") {
+    useBatteryVariant = true;
+  } else if (offerVariant === "no_battery") {
+    useBatteryVariant = false;
+  } else {
+    useBatteryVariant = d.payBat <= d.payNo + 3 && d.profitBat >= d.profitNo;
+  }
+
+  const selectedTotalNoVat = useBatteryVariant
+    ? (d.base + (+battery_price.value || 0))
+    : d.base;
+
   const selectedTotalWithVat = selectedTotalNoVat * 1.20;
   const selectedVariantText = useBatteryVariant ? "С батерия" : "Без батерия";
 
@@ -412,7 +460,7 @@ function generatePDF() {
 
     <div class="out-number">Изх.N: ${outNumber}</div>
 
-    <div class="attention">На вниманието на: ${attention}</div>
+    <div class="attention">На вниманието на: ${attentionLabel}</div>
 
     <div class="title-block">
       <h1>Б Ю Д Ж Е Т Н А&nbsp; О Ф Е Р Т А</h1>
@@ -421,7 +469,7 @@ function generatePDF() {
     </div>
 
     <div class="paragraph">
-      Уважаеми ${client},<br><br>
+      ${greeting}<br><br>
       Във връзка с Ваше запитване за изграждане на фотоволтаична система,
       за нас е удоволствие да Ви представим нашата бюджетна оферта, както следва:
     </div>
