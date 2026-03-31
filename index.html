@@ -148,7 +148,68 @@ profitBat: saveBat*25-(base+ +battery_price.value)
 };
 }
 
-client
+function calc() {
+  const d = getData();
+
+  const noBatBetter = d.payNo <= d.payBat;
+  const withBatBetter = !noBatBetter;
+
+  let recommendation = "";
+  if (d.payNo + 3 < d.payBat) {
+    recommendation = "Препоръчано решение: БЕЗ батерия – по-добра възвръщаемост.";
+  } else if (d.profitBat > d.profitNo && d.payBat <= d.payNo + 3) {
+    recommendation = "Препоръчано решение: С батерия – по-висока дългосрочна печалба и по-добро самопотребление.";
+  } else {
+    recommendation = "Препоръчано решение: БЕЗ батерия – по-балансиран вариант към момента.";
+  }
+
+  const dynamicNoText = d.dynNo >= 50 ? ">50 години" : `${d.dynNo} г.`;
+  const dynamicBatText = d.dynBat >= 50 ? ">50 години" : `${d.dynBat} г.`;
+
+  const yearlyProduction = d.yearly;
+  const usedNo = yearlyProduction * (parseFloat(self_use_no_battery.value) / 100);
+  const usedBat = yearlyProduction * (parseFloat(self_use_with_battery.value) / 100);
+
+  result.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <strong>Мощност:</strong> ${d.kwp.toFixed(2)} kWp<br>
+      <strong>Категория:</strong> ${
+        d.kwp <= 15 ? "Малка система" : d.kwp <= 50 ? "Средна система" : "Голяма система"
+      }<br>
+      <strong>Цена на категория:</strong> ${Number(d.price).toFixed(0)} €/kWp<br>
+      <strong>Базова цена на системата:</strong> ${d.base.toFixed(0)} €<br>
+      <strong>Годишно производство:</strong> ${yearlyProduction.toFixed(0)} kWh<br>
+      <strong>Цена на тока:</strong> ${parseFloat(price_kwh.value).toFixed(2)} €/kWh<br>
+      <strong>Годишно поскъпване на тока:</strong> ${parseFloat(energy_growth.value).toFixed(1)} %
+    </div>
+
+    <div class="card ${noBatBetter ? 'good' : 'bad'}">
+      <div><strong>❌ Без батерия</strong></div>
+      <div>Цена: ${d.base.toFixed(0)} €</div>
+      <div>Самопотребление: ${parseFloat(self_use_no_battery.value).toFixed(0)} %</div>
+      <div>Оползотворена енергия: ${usedNo.toFixed(0)} kWh</div>
+      <div>Годишна икономия: ${d.saveNo.toFixed(0)} €</div>
+      <div>Опростена възвръщаемост: ${d.payNo.toFixed(1)} години</div>
+      <div>Динамична възвръщаемост: ${dynamicNoText}</div>
+      <div>Печалба за 25 години: ${d.profitNo.toFixed(0)} €</div>
+    </div>
+
+    <div class="card ${withBatBetter ? 'good' : 'bad'}">
+      <div><strong>🔋 С батерия</strong></div>
+      <div>Цена: ${(d.base + +battery_price.value).toFixed(0)} €</div>
+      <div>Самопотребление: ${parseFloat(self_use_with_battery.value).toFixed(0)} %</div>
+      <div>Оползотворена енергия: ${usedBat.toFixed(0)} kWh</div>
+      <div>Годишна икономия: ${d.saveBat.toFixed(0)} €</div>
+      <div>Опростена възвръщаемост: ${d.payBat.toFixed(1)} години</div>
+      <div>Динамична възвръщаемост: ${dynamicBatText}</div>
+      <div>Печалба за 25 години: ${d.profitBat.toFixed(0)} €</div>
+    </div>
+
+    <div class="card good">
+      <strong>${recommendation}</strong>
+    </div>
+  `;
+}
 
 function generatePDF() {
   const d = getData();
@@ -368,13 +429,14 @@ function generatePDF() {
       <div class="value">Ще бъдат уточнени в окончателната оферта</div>
     </div>
 
-    <div class="section-row price-block">
+     <div class="section-row price-block">
       <span class="label">Стойност:</span>
       <div class="price-line">
         ОБЩА СУМА:
         ${selectedTotalNoVat.toFixed(2)} ЕВРО без ДДС /
         ${selectedTotalWithVat.toFixed(2)} ЕВРО с ДДС
       </div>
+      <div class="muted">
         Вариант: ${selectedVariantText} | Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
       </div>
     </div>
