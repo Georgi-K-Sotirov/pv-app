@@ -59,6 +59,7 @@ margin-top:10px;
 <h3>Данни за оферта</h3>
 <input id="client_name" placeholder="Клиент">
 <input id="project_name" placeholder="Обект">
+<input id="attention_name" placeholder="На вниманието на: г-н Иван Иванов">
 
 <h3>Покрив</h3>
 <input id="area" value="35">
@@ -171,169 +172,277 @@ result.innerHTML = `
 `;
 }
 
-function generatePDF(){
+function generatePDF() {
+  const d = getData();
 
-let d = getData();
+  const client = document.getElementById("client_name").value || "Клиент";
+  const attention = document.getElementById("attention_name").value || client;
+  const project = document.getElementById("project_name").value || "-";
 
-let client = client_name.value || "Клиент";
-let project = project_name.value || "-";
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("bg-BG");
 
-let today = new Date();
-let date = today.toLocaleDateString("bg-BG");
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const randomPart = String(Math.floor(Math.random() * 900) + 100);
 
-let offerNumber = "BUG" + today.getFullYear() +
-String(today.getMonth()+1).padStart(2,'0') +
-String(today.getDate()).padStart(2,'0') +
-Math.floor(Math.random()*1000);
+  const outNumber = `${randomPart}/${dateStr}`;
+  const offerNumber = `BUG${yyyy}${mm}${dd}${randomPart}`;
 
-let priceNoVat = d.base;
-let priceWithVat = priceNoVat * 1.2;
+  const useBatteryVariant = d.payBat <= d.payNo + 3 && d.profitBat >= d.profitNo;
+  const selectedTotalNoVat = useBatteryVariant ? (d.base + (+battery_price.value || 0)) : d.base;
+  const selectedTotalWithVat = selectedTotalNoVat * 1.20;
+  const selectedVariantText = useBatteryVariant ? "С батерия" : "Без батерия";
 
-let win = window.open("","_blank");
+  const logoSrc = "icon.png";
 
-win.document.write(`
-<html>
-<head>
-<style>
-body {
-font-family: Arial;
-margin: 40px;
-color:#111;
-line-height:1.5;
-}
+  const win = window.open("", "_blank");
 
-.header {
-display:flex;
-justify-content:space-between;
-align-items:center;
-border-bottom:2px solid #000;
-padding-bottom:10px;
-margin-bottom:20px;
-}
+  win.document.write(`
+  <html lang="bg">
+  <head>
+    <meta charset="UTF-8">
+    <title>Бюджетна оферта</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 22mm 18mm 22mm 18mm;
+      }
 
-.logo {
-height:60px;
-}
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        color: #111;
+        margin: 0;
+        line-height: 1.45;
+        font-size: 14px;
+      }
 
-.title {
-text-align:center;
-margin:20px 0;
-}
+      .top-company {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+      }
 
-.section {
-margin-top:18px;
-}
+      .company-left {
+        font-size: 12px;
+        line-height: 1.35;
+      }
 
-.bold {font-weight:bold;}
+      .company-logo {
+        height: 62px;
+        object-fit: contain;
+      }
 
-.box {
-margin-top:20px;
-padding:15px;
-border:2px solid #000;
-font-size:18px;
-}
+      .out-number {
+        text-align: left;
+        margin: 10px 0 22px 0;
+        font-size: 14px;
+      }
 
-.footer {
-margin-top:50px;
-display:flex;
-justify-content:space-between;
-}
+      .attention {
+        margin-bottom: 28px;
+        font-size: 15px;
+      }
 
-.small {
-font-size:13px;
-color:#444;
-margin-top:10px;
-}
-</style>
-</head>
+      .title-block {
+        text-align: center;
+        margin-bottom: 24px;
+      }
 
-<body>
+      .title-block h1 {
+        font-size: 22px;
+        margin: 0 0 12px 0;
+        letter-spacing: 6px;
+        font-weight: 700;
+      }
 
-<div class="header">
-<div>
-<b>ПИ ТИ ДЖИ ИНЖЕНЕРИНГ ООД</b><br>
-гр. Варна
-</div>
+      .offer-no {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
 
-<img src="icon.png" class="logo">
-</div>
+      .offer-from {
+        font-size: 16px;
+        font-weight: 700;
+      }
 
-<div style="text-align:right">
-Изх.N: ${offerNumber}
-</div>
+      .paragraph {
+        margin-bottom: 18px;
+        text-align: justify;
+      }
 
-<div class="section">
-На вниманието на: ${client}
-</div>
+      .section-row {
+        margin-bottom: 16px;
+      }
 
-<div class="title">
-<h2>БЮДЖЕТНА ОФЕРТА</h2>
-<div>№ ${offerNumber} / ${date}</div>
-</div>
+      .label {
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+      }
 
-<div class="section">
-Уважаеми ${client},<br><br>
-Във връзка с Ваше запитване за изграждане на фотоволтаична система,
-имаме удоволствието да Ви представим нашата оферта:
-</div>
+      .value {
+        padding-left: 0;
+      }
 
-<div class="section">
-<b>Обект:</b> ${project}<br><br>
+      .price-block {
+        margin: 18px 0;
+      }
 
-<b>Цел:</b> Изграждане на фотоволтаична система<br><br>
+      .price-line {
+        font-size: 18px;
+        font-weight: 700;
+      }
 
-<b>Инсталирана мощност:</b> ${d.kwp.toFixed(2)} kWp<br><br>
+      .bank-block,
+      .notes-block {
+        margin-top: 10px;
+      }
 
-<b>Срокове:</b> Ще бъдат уточнени в окончателната оферта
-</div>
+      .closing {
+        margin-top: 26px;
+      }
 
-<div class="box">
-ОБЩА СУМА:<br><br>
+      .sign-row {
+        margin-top: 42px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
 
-${priceNoVat.toFixed(2)} € без ДДС<br>
-${priceWithVat.toFixed(2)} € с ДДС
-</div>
+      .sign-left, .sign-right {
+        width: 40%;
+      }
 
-<div class="section">
-<b>Начин на плащане:</b><br>
-50% авансово при поръчка, 50% след въвеждане в експлоатация
-</div>
+      .sign-right {
+        text-align: left;
+      }
 
-<div class="section">
-<b>Банка:</b> Банка ДСК<br>
-IBAN: BG84STSA93000032207428<br>
-BIC: STSABGSF
-</div>
+      .muted {
+        font-size: 12px;
+      }
 
-<div class="section">
-<b>Валидност:</b> 30 календарни дни
-</div>
+      .nowrap {
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
 
-<div class="small">
-Предложената цена е ориентировъчна и подлежи на уточнение след оглед.
-</div>
+    <div class="top-company">
+      <div class="company-left">
+        <div><strong>PTG Engineering Ltd.</strong></div>
+        <div>Madara Street 23 Apr 10</div>
+        <div>9010 Varna, Bulgaria</div>
+        <div>office@ptg-engineering.com</div>
+        <div>www.ptg-engineering.com</div>
+      </div>
+      <img src="${logoSrc}" class="company-logo" alt="PTG logo">
+    </div>
 
-<div class="footer">
-<div>
-${date}<br><br>
-инж. Георги Сотиров<br>
-Управител
-</div>
+    <div class="out-number">Изх.N: ${outNumber}</div>
 
-<div>
-С УВАЖЕНИЕ
-</div>
-</div>
+    <div class="attention">На вниманието на: ${attention}</div>
 
-</body>
-</html>
-`);
+    <div class="title-block">
+      <h1>Б Ю Д Ж Е Т Н А&nbsp; О Ф Е Р Т А</h1>
+      <div class="offer-no">№ ${offerNumber} / ${dateStr}</div>
+      <div class="offer-from">От “ПИ ТИ ДЖИ ИНЖЕНЕРИНГ” ООД- ВАРНА</div>
+    </div>
 
-win.document.close();
+    <div class="paragraph">
+      Уважаеми ${client},<br><br>
+      Във връзка с Ваше запитване за изграждане на фотоволтаична система,
+      за нас е удоволствие да Ви представим нашата бюджетна оферта, както следва:
+    </div>
 
-setTimeout(()=>{
-win.print();
-},500);
+    <div class="section-row">
+      <span class="label">Обект:</span>
+      <div class="value">${project}</div>
+    </div>
+
+    <div class="section-row">
+      <span class="label">Цел:</span>
+      <div class="value">Изграждане на фотоволтаична система</div>
+    </div>
+
+    <div class="section-row">
+      <span class="label">Срокове:</span>
+      <div class="value">Ще бъдат уточнени в окончателната оферта</div>
+    </div>
+
+    <div class="section-row price-block">
+      <span class="label">Стойност:</span>
+      <div class="price-line">
+        ОБЩА СУМА:
+        ${selectedTotalNoVat.toFixed(2)} ЕВРО без ДДС /
+        ${selectedTotalWithVat.toFixed(2)} ЕВРО с ДДС
+      </div>
+      <div class="muted" style="margin-top:6px;">
+        Вариант: ${selectedVariantText} | Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
+      </div>
+    </div>
+
+    <div class="section-row">
+      <span class="label">Начин на плащане:</span>
+      <div class="value">
+        50% авансово при поръчка, 50% след въвеждане на инсталацията в експлоатация
+        и подписване на приемо-предавателен протокол
+      </div>
+    </div>
+
+    <div class="section-row bank-block">
+      <div>Банков път: Банка ДСК АД,</div>
+      <div>IBAN Сметка лева: BG84STSA93000032207428,</div>
+      <div>BIC: STSABGSF;</div>
+    </div>
+
+    <div class="section-row">
+      <span class="label">Валидност на офертата:</span>
+      <div class="value">30 календарни дни</div>
+    </div>
+
+    <div class="section-row">
+      <span class="label">Приложения:</span>
+      <div class="value">Подробна ведомост с количествено-стойностна сметка;</div>
+    </div>
+
+    <div class="section-row notes-block">
+      <span class="label">Забележки:</span>
+      <div class="value">
+        Предложените суми са за оборудването доставено и монтирано DDP Варна
+        (Incoterms 2015), опаковано, без начислен ДДС.
+      </div>
+    </div>
+
+    <div class="closing">
+      Искрено се надяваме, че нашата оферта ще удовлетвори Вашите условия!
+    </div>
+
+    <div class="sign-row">
+      <div class="sign-left">
+        ${dateStr} г.<br>
+        гр. Варна
+      </div>
+      <div class="sign-right">
+        С УВАЖЕНИЕ:<br><br>
+        инж. Георги Сотиров<br>
+        Управител
+      </div>
+    </div>
+
+  </body>
+  </html>
+  `);
+
+  win.document.close();
+  win.focus();
+
+  setTimeout(() => {
+    win.print();
+  }, 700);
 }
 </script>
 
