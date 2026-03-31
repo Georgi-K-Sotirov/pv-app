@@ -57,35 +57,47 @@ margin-top:10px;
 <h2>PV Калкулатор</h2>
 
 <h3>Данни за оферта</h3>
-<input id="client_name" placeholder="Клиент">
-<input id="project_name" placeholder="Обект">
-<input id="attention_name" placeholder="На вниманието на: г-н Иван Иванов">
+<label>Клиент</label>
+<input id="client_name" placeholder="Име на клиент">
+<label>Обект</label>
+<input id="project_name" placeholder="Адрес / обект">
 
 <h3>Покрив</h3>
+<label>Площ (m²)</label>
 <input id="area" value="35">
+<label>Използваемост (%)</label>
 <input id="factor" value="0.75">
+<label>Плътност (kWp/m²)</label>
 <input id="density" value="0.21">
 
 <h3>Цени</h3>
+<label>Цена до 15 kWp (€/kWp)</label>
 <input id="price_small" value="1500">
+<label>Цена до 50 kWp (€/kWp)</label>
 <input id="price_medium" value="1100">
+<label>Цена над 50 kWp (€/kWp)</label>
 <input id="price_large" value="950">
 
 <h3>Батерия</h3>
+<label>Цена на батерия (€)</label>
 <input id="battery_price" value="5000">
 
 <h3>Тип обект</h3>
+<label>Тип клиент</label>
 <select id="object_type" onchange="updateObjectType()">
 <option value="household">Битов</option>
 <option value="industrial">Промишлен</option>
 </select>
-
+<label>Цена на ток (€/kWh)</label>
 <input id="price_kwh" value="0.13">
 
+<label>Специфично производство (kWh/kWp)</label>
 <input id="specific_yield" value="1350">
+<label>Самопотребление без батерия (%)</label>
 <input id="self_use_no_battery" value="45">
+<label>Самопотребление с батерия (%)</label>
 <input id="self_use_with_battery" value="75">
-<label for="energy_growth">Годишно поскъпване на тока (%)</label>
+<label>Годишно поскъпване на тока (%)</label>
 <input id="energy_growth" value="3">
 
 <button onclick="calc()">Смятай</button>
@@ -215,7 +227,7 @@ function generatePDF() {
   const d = getData();
 
   const client = document.getElementById("client_name").value || "Клиент";
-  const attention = document.getElementById("attention_name").value || client;
+  const attention = client;
   const project = document.getElementById("project_name").value || "-";
 
   const today = new Date();
