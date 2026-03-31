@@ -79,12 +79,54 @@
 
     .result {
       margin-top: 18px;
-      background: #f3f3f3;
+      background: #f7f7f7;
       border-radius: 10px;
       padding: 14px;
-      white-space: pre-line;
       min-height: 180px;
-      font-size: 18px;
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .card {
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+      border: 2px solid #ddd;
+      background: white;
+    }
+
+    .good {
+      border-color: #2e7d32;
+      background: #edf8ee;
+    }
+
+    .bad {
+      border-color: #c62828;
+      background: #fdeeee;
+    }
+
+    .neutral {
+      border-color: #999;
+      background: #fafafa;
+    }
+
+    .title-row {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .metric {
+      margin: 4px 0;
+    }
+
+    .recommendation {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #e8f5e9;
+      border: 2px solid #2e7d32;
+      font-size: 17px;
       line-height: 1.45;
     }
 
@@ -92,12 +134,6 @@
       font-size: 13px;
       color: #666;
       margin-top: 4px;
-    }
-
-    .section {
-      border-top: 1px solid #eee;
-      padding-top: 10px;
-      margin-top: 10px;
     }
   </style>
 </head>
@@ -115,7 +151,7 @@
 
     <label for="density">Плътност (kWp/m²)</label>
     <input id="density" value="0.21">
-    <div class="small">Примерна реалистична стойност: 0.18 – 0.22</div>
+    <div class="small">Пример: 0.18 – 0.22</div>
 
     <h3>2) Цени по категории</h3>
 
@@ -129,12 +165,6 @@
     <input id="price_large" value="950">
 
     <h3>3) Батерия</h3>
-
-    <label for="battery">Конфигурация</label>
-    <select id="battery">
-      <option value="yes">С батерия</option>
-      <option value="no">Без батерия</option>
-    </select>
 
     <label for="battery_price">Цена батерия (€)</label>
     <input id="battery_price" value="5000">
@@ -179,76 +209,109 @@
       }
     }
 
-    <script>
-  function calc() {
-    const area = parseFloat(area.value) || 0;
-    const factor = parseFloat(factor.value) || 0;
-    const density = parseFloat(density.value) || 0;
-  
-    const priceSmall = parseFloat(price_small.value) || 0;
-    const priceMedium = parseFloat(price_medium.value) || 0;
-    const priceLarge = parseFloat(price_large.value) || 0;
-  
-    const batteryPrice = parseFloat(battery_price.value) || 0;
-  
-    const objectType = object_type.value;
-    const priceKwh = parseFloat(price_kwh.value) || 0;
-    const specificYield = parseFloat(specific_yield.value) || 0;
-    const selfUseNoBattery = parseFloat(self_use_no_battery.value) || 0;
-    const selfUseWithBattery = parseFloat(self_use_with_battery.value) || 0;
-  
-    const kwp = area * factor * density;
-  
-    let category = "";
-    let pricePerKwp = 0;
-  
-    if (kwp <= 15) {
-      category = "Малка система";
-      pricePerKwp = priceSmall;
-    } else if (kwp <= 50) {
-      category = "Средна система";
-      pricePerKwp = priceMedium;
-    } else {
-      category = "Голяма система";
-      pricePerKwp = priceLarge;
+    function eur(v) {
+      return `${v.toFixed(0)} €`;
     }
-  
-    const basePrice = kwp * pricePerKwp;
-  
-    const yearlyProduction = kwp * specificYield;
-  
-    // ❌ БЕЗ БАТЕРИЯ
-    const usedNoBat = yearlyProduction * (selfUseNoBattery / 100);
-    const savingsNoBat = usedNoBat * priceKwh;
-    const paybackNoBat = savingsNoBat > 0 ? basePrice / savingsNoBat : 0;
-  
-    // 🔋 С БАТЕРИЯ
-    const totalWithBat = basePrice + batteryPrice;
-    const usedWithBat = yearlyProduction * (selfUseWithBattery / 100);
-    const savingsWithBat = usedWithBat * priceKwh;
-    const paybackWithBat = savingsWithBat > 0 ? totalWithBat / savingsWithBat : 0;
-  
-    document.getElementById("result").innerText =
-  `📊 ОБЩО
-  Мощност: ${kwp.toFixed(2)} kWp
-  Категория: ${category}
-  Цена на система: ${basePrice.toFixed(0)} €
-  
-  ────────────────────
-  ❌ БЕЗ БАТЕРИЯ
-  
-  Самопотребление: ${selfUseNoBattery.toFixed(0)} %
-  Годишна икономия: ${savingsNoBat.toFixed(0)} €
-  Възвръщаемост: ${paybackNoBat.toFixed(1)} години
-  
-  ────────────────────
-  🔋 С БАТЕРИЯ
-  
-  Цена с батерия: ${totalWithBat.toFixed(0)} €
-  Самопотребление: ${selfUseWithBattery.toFixed(0)} %
-  Годишна икономия: ${savingsWithBat.toFixed(0)} €
-  Възвръщаемост: ${paybackWithBat.toFixed(1)} години`;
-  }
+
+    function years(v) {
+      return `${v.toFixed(1)} години`;
+    }
+
+    function calc() {
+      const area = parseFloat(document.getElementById("area").value) || 0;
+      const factor = parseFloat(document.getElementById("factor").value) || 0;
+      const density = parseFloat(document.getElementById("density").value) || 0;
+
+      const priceSmall = parseFloat(document.getElementById("price_small").value) || 0;
+      const priceMedium = parseFloat(document.getElementById("price_medium").value) || 0;
+      const priceLarge = parseFloat(document.getElementById("price_large").value) || 0;
+
+      const batteryPrice = parseFloat(document.getElementById("battery_price").value) || 0;
+
+      const objectType = document.getElementById("object_type").value;
+      const priceKwh = parseFloat(document.getElementById("price_kwh").value) || 0;
+      const specificYield = parseFloat(document.getElementById("specific_yield").value) || 0;
+      const selfUseNoBattery = parseFloat(document.getElementById("self_use_no_battery").value) || 0;
+      const selfUseWithBattery = parseFloat(document.getElementById("self_use_with_battery").value) || 0;
+
+      const kwp = area * factor * density;
+
+      let category = "";
+      let pricePerKwp = 0;
+
+      if (kwp <= 15) {
+        category = "Малка система";
+        pricePerKwp = priceSmall;
+      } else if (kwp <= 50) {
+        category = "Средна система";
+        pricePerKwp = priceMedium;
+      } else {
+        category = "Голяма система";
+        pricePerKwp = priceLarge;
+      }
+
+      const basePrice = kwp * pricePerKwp;
+      const yearlyProduction = kwp * specificYield;
+
+      const usedNoBat = yearlyProduction * (selfUseNoBattery / 100);
+      const savingsNoBat = usedNoBat * priceKwh;
+      const paybackNoBat = savingsNoBat > 0 ? basePrice / savingsNoBat : 0;
+      const profit25NoBat = (savingsNoBat * 25) - basePrice;
+
+      const totalWithBat = basePrice + batteryPrice;
+      const usedWithBat = yearlyProduction * (selfUseWithBattery / 100);
+      const savingsWithBat = usedWithBat * priceKwh;
+      const paybackWithBat = savingsWithBat > 0 ? totalWithBat / savingsWithBat : 0;
+      const profit25WithBat = (savingsWithBat * 25) - totalWithBat;
+
+      let recommended = "";
+      if (paybackNoBat + 3 < paybackWithBat) {
+        recommended = "Препоръчано решение: БЕЗ батерия – по-добра възвръщаемост.";
+      } else if (profit25WithBat > profit25NoBat && paybackWithBat <= paybackNoBat + 3) {
+        recommended = "Препоръчано решение: С батерия – по-висока дългосрочна печалба и по-добро самопотребление.";
+      } else {
+        recommended = "Препоръчано решение: БЕЗ батерия – по-балансиран вариант към момента.";
+      }
+
+      const noBatBetter = paybackNoBat <= paybackWithBat;
+      const withBatBetter = !noBatBetter;
+
+      document.getElementById("info").innerText =
+        `Тип обект: ${objectType === "household" ? "Битов" : "Промишлен"} | Категория: ${category} | Цена на тока: ${priceKwh.toFixed(2)} €/kWh`;
+
+      document.getElementById("result").innerHTML = `
+        <div class="metric"><strong>Мощност:</strong> ${kwp.toFixed(2)} kWp</div>
+        <div class="metric"><strong>Цена на категория:</strong> ${pricePerKwp.toFixed(0)} €/kWp</div>
+        <div class="metric"><strong>Базова цена на системата:</strong> ${eur(basePrice)}</div>
+        <div class="metric"><strong>Годишно производство:</strong> ${yearlyProduction.toFixed(0)} kWh</div>
+
+        <div class="card ${noBatBetter ? 'good' : 'bad'}">
+          <div class="title-row">❌ Без батерия</div>
+          <div class="metric"><strong>Цена:</strong> ${eur(basePrice)}</div>
+          <div class="metric"><strong>Самопотребление:</strong> ${selfUseNoBattery.toFixed(0)} %</div>
+          <div class="metric"><strong>Оползотворена енергия:</strong> ${usedNoBat.toFixed(0)} kWh</div>
+          <div class="metric"><strong>Годишна икономия:</strong> ${eur(savingsNoBat)}</div>
+          <div class="metric"><strong>Възвръщаемост:</strong> ${years(paybackNoBat)}</div>
+          <div class="metric"><strong>Печалба за 25 години:</strong> ${eur(profit25NoBat)}</div>
+        </div>
+
+        <div class="card ${withBatBetter ? 'good' : 'bad'}">
+          <div class="title-row">🔋 С батерия</div>
+          <div class="metric"><strong>Цена:</strong> ${eur(totalWithBat)}</div>
+          <div class="metric"><strong>Самопотребление:</strong> ${selfUseWithBattery.toFixed(0)} %</div>
+          <div class="metric"><strong>Оползотворена енергия:</strong> ${usedWithBat.toFixed(0)} kWh</div>
+          <div class="metric"><strong>Годишна икономия:</strong> ${eur(savingsWithBat)}</div>
+          <div class="metric"><strong>Възвръщаемост:</strong> ${years(paybackWithBat)}</div>
+          <div class="metric"><strong>Печалба за 25 години:</strong> ${eur(profit25WithBat)}</div>
+        </div>
+
+        <div class="recommendation">
+          <strong>${recommended}</strong>
+        </div>
+      `;
+    }
+
+    updateObjectType();
   </script>
 </body>
 </html>
