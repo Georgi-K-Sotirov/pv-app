@@ -1,341 +1,223 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PV Калкулатор</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
-  <meta name="theme-color" content="#2e7d32">
+<title>PV Калкулатор</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #efefef;
-      margin: 0;
-      padding: 12px;
-    }
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#2e7d32">
 
-    .container {
-      max-width: 560px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 16px;
-      border-radius: 14px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
+<style>
+body {font-family: Arial; background:#efefef; padding:12px;}
+.container {max-width:600px;margin:auto;background:white;padding:16px;border-radius:12px;}
 
-    h2 {
-      margin: 0 0 14px 0;
-      font-size: 28px;
-    }
+input, select {
+width:100%;
+padding:12px;
+margin:6px 0 12px;
+font-size:16px;
+}
 
-    h3 {
-      margin: 18px 0 10px;
-      font-size: 18px;
-    }
+button {
+width:100%;
+padding:14px;
+font-size:20px;
+margin-top:10px;
+border:none;
+border-radius:10px;
+color:white;
+background:#2e7d32;
+}
 
-    label {
-      display: block;
-      margin: 12px 0 6px;
-      font-weight: 600;
-      font-size: 15px;
-    }
+.blue {background:#1565c0;}
 
-    input, select {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px;
-      font-size: 17px;
-      border: 1px solid #999;
-      border-radius: 6px;
-      background: white;
-    }
+.card {
+border:2px solid #ccc;
+padding:12px;
+border-radius:10px;
+margin-top:10px;
+}
 
-    input:disabled {
-      background: #f0f0f0;
-      color: #666;
-    }
+.good {border-color:green;background:#eef8ee;}
+.bad {border-color:red;background:#fdeeee;}
 
-    button {
-      width: 100%;
-      margin-top: 16px;
-      padding: 14px;
-      font-size: 22px;
-      background: #2e7d32;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-    }
+.result {margin-top:15px;font-size:16px;}
 
-    .info {
-      margin-top: 10px;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .result {
-      margin-top: 18px;
-      background: #f7f7f7;
-      border-radius: 10px;
-      padding: 14px;
-      min-height: 180px;
-      font-size: 17px;
-      line-height: 1.45;
-    }
-
-    .card {
-      border-radius: 12px;
-      padding: 14px;
-      margin-top: 12px;
-      border: 2px solid #ddd;
-      background: white;
-    }
-
-    .good {
-      border-color: #2e7d32;
-      background: #edf8ee;
-    }
-
-    .bad {
-      border-color: #c62828;
-      background: #fdeeee;
-    }
-
-    .title-row {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-
-    .metric {
-      margin: 4px 0;
-    }
-
-    .recommendation {
-      margin-top: 16px;
-      padding: 14px;
-      border-radius: 12px;
-      background: #e8f5e9;
-      border: 2px solid #2e7d32;
-      font-size: 17px;
-      line-height: 1.45;
-    }
-
-    .small {
-      font-size: 13px;
-      color: #666;
-      margin-top: 4px;
-    }
-  </style>
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <h2>PV Калкулатор</h2>
 
-    <h3>1) Покрив</h3>
+<div class="container">
 
-    <label for="area">Площ (m²)</label>
-    <input id="area" value="35">
+<h2>PV Калкулатор</h2>
 
-    <label for="factor">Използваемост</label>
-    <input id="factor" value="0.75">
+<h3>Данни за оферта</h3>
+<input id="client_name" placeholder="Клиент">
+<input id="project_name" placeholder="Обект">
 
-    <label for="density">Плътност (kWp/m²)</label>
-    <input id="density" value="0.21">
-    <div class="small">Пример: 0.18 – 0.22</div>
+<h3>Покрив</h3>
+<input id="area" value="35">
+<input id="factor" value="0.75">
+<input id="density" value="0.21">
 
-    <h3>2) Цени по категории</h3>
+<h3>Цени</h3>
+<input id="price_small" value="1500">
+<input id="price_medium" value="1100">
+<input id="price_large" value="950">
 
-    <label for="price_small">Цена до 15 kWp (€/kWp)</label>
-    <input id="price_small" value="1500">
+<h3>Батерия</h3>
+<input id="battery_price" value="5000">
 
-    <label for="price_medium">Цена до 50 kWp (€/kWp)</label>
-    <input id="price_medium" value="1100">
+<h3>Тип обект</h3>
+<select id="object_type" onchange="updateObjectType()">
+<option value="household">Битов</option>
+<option value="industrial">Промишлен</option>
+</select>
 
-    <label for="price_large">Цена над 50 kWp (€/kWp)</label>
-    <input id="price_large" value="950">
+<input id="price_kwh" value="0.13">
 
-    <h3>3) Батерия</h3>
+<input id="specific_yield" value="1350">
+<input id="self_use_no_battery" value="45">
+<input id="self_use_with_battery" value="75">
+<input id="energy_growth" value="3">
 
-    <label for="battery_price">Цена батерия (€)</label>
-    <input id="battery_price" value="5000">
+<button onclick="calc()">Смятай</button>
+<button class="blue" onclick="generatePDF()">PDF оферта</button>
 
-    <h3>4) Консумация</h3>
+<div id="result" class="result"></div>
 
-    <label for="object_type">Тип обект</label>
-    <select id="object_type" onchange="updateObjectType()">
-      <option value="household">Битов</option>
-      <option value="industrial">Промишлен</option>
-    </select>
+</div>
 
-    <label for="price_kwh">Цена ток (€/kWh)</label>
-    <input id="price_kwh" value="0.13">
+<script>
 
-    <label for="specific_yield">Специфично производство (kWh/kWp/год.)</label>
-    <input id="specific_yield" value="1350">
+function updateObjectType(){
+let type = object_type.value;
+if(type==="household"){
+price_kwh.value=0.13;
+price_kwh.disabled=true;
+}else{
+price_kwh.value=0.22;
+price_kwh.disabled=false;
+}
+}
 
-    <label for="self_use_no_battery">Самопотребление без батерия (%)</label>
-    <input id="self_use_no_battery" value="45">
+function dynamicPayback(cost, saving, growth){
+let cum=0;
+let yearly=saving;
+for(let y=1;y<=50;y++){
+cum+=yearly;
+if(cum>=cost) return y;
+yearly*=1+(growth/100);
+}
+return 50;
+}
 
-    <label for="self_use_with_battery">Самопотребление с батерия (%)</label>
-    <input id="self_use_with_battery" value="75">
+function getData(){
 
-    <label for="energy_growth">Годишно поскъпване на тока (%)</label>
-    <input id="energy_growth" value="3">
+let kwp = area.value * factor.value * density.value;
 
-    <button type="button" onclick="calc()">Смятай</button>
+let price = kwp<=15?price_small.value:
+kwp<=50?price_medium.value:
+price_large.value;
 
-    <p class="info" id="info"></p>
-    <div class="result" id="result">Натисни „Смятай“.</div>
-  </div>
+let base = kwp * price;
+let yearly = kwp * specific_yield.value;
 
-  <script>
-    function updateObjectType() {
-      const objectType = document.getElementById("object_type").value;
-      const priceKwh = document.getElementById("price_kwh");
+let usedNo = yearly * self_use_no_battery.value/100;
+let saveNo = usedNo * price_kwh.value;
 
-      if (objectType === "household") {
-        priceKwh.value = "0.13";
-        priceKwh.disabled = true;
-      } else {
-        priceKwh.value = "0.22";
-        priceKwh.disabled = false;
-      }
-    }
+let usedBat = yearly * self_use_with_battery.value/100;
+let saveBat = usedBat * price_kwh.value;
 
-    function eur(v) {
-      return `${v.toFixed(0)} €`;
-    }
+return {
+kwp,price,base,yearly,
+saveNo,saveBat,
+payNo: base/saveNo,
+payBat: (base+ +battery_price.value)/saveBat,
+dynNo: dynamicPayback(base,saveNo,energy_growth.value),
+dynBat: dynamicPayback(base+ +battery_price.value,saveBat,energy_growth.value),
+profitNo: saveNo*25-base,
+profitBat: saveBat*25-(base+ +battery_price.value)
+};
+}
 
-    function years(v) {
-      return `${v.toFixed(1)} години`;
-    }
+function calc(){
 
-    function dynamicPayback(initialCost, firstYearSaving, growthPercent) {
-      if (initialCost <= 0 || firstYearSaving <= 0) return 0;
+let d = getData();
 
-      let cumulative = 0;
-      let yearlySaving = firstYearSaving;
-      const growth = growthPercent / 100;
+let better = d.payNo < d.payBat;
 
-      for (let year = 1; year <= 50; year++) {
-        cumulative += yearlySaving;
-        if (cumulative >= initialCost) return year;
-        yearlySaving *= (1 + growth);
-      }
+result.innerHTML = `
+<div class="card ${better?'good':'bad'}">
+❌ Без батерия<br>
+Цена: ${d.base.toFixed(0)} €<br>
+Възвръщаемост: ${d.payNo.toFixed(1)} г.<br>
+Динамична: ${d.dynNo} г.<br>
+Печалба: ${d.profitNo.toFixed(0)} €
+</div>
 
-      return 50;
-    }
+<div class="card ${!better?'good':'bad'}">
+🔋 С батерия<br>
+Цена: ${(d.base + +battery_price.value).toFixed(0)} €<br>
+Възвръщаемост: ${d.payBat.toFixed(1)} г.<br>
+Динамична: ${d.dynBat} г.<br>
+Печалба: ${d.profitBat.toFixed(0)} €
+</div>
+`;
+}
 
-    function calc() {
-      const area = parseFloat(document.getElementById("area").value) || 0;
-      const factor = parseFloat(document.getElementById("factor").value) || 0;
-      const density = parseFloat(document.getElementById("density").value) || 0;
+function generatePDF(){
 
-      const priceSmall = parseFloat(document.getElementById("price_small").value) || 0;
-      const priceMedium = parseFloat(document.getElementById("price_medium").value) || 0;
-      const priceLarge = parseFloat(document.getElementById("price_large").value) || 0;
+let d = getData();
 
-      const batteryPrice = parseFloat(document.getElementById("battery_price").value) || 0;
+let client = client_name.value || "Клиент";
+let project = project_name.value || "-";
 
-      const objectType = document.getElementById("object_type").value;
-      const priceKwh = parseFloat(document.getElementById("price_kwh").value) || 0;
-      const specificYield = parseFloat(document.getElementById("specific_yield").value) || 0;
-      const selfUseNoBattery = parseFloat(document.getElementById("self_use_no_battery").value) || 0;
-      const selfUseWithBattery = parseFloat(document.getElementById("self_use_with_battery").value) || 0;
-      const energyGrowth = parseFloat(document.getElementById("energy_growth").value) || 0;
+let date = new Date().toLocaleDateString("bg-BG");
 
-      const kwp = area * factor * density;
+let win = window.open("","_blank");
 
-      let category = "";
-      let pricePerKwp = 0;
+win.document.write(`
+<html><body style="font-family:Arial;padding:40px">
 
-      if (kwp <= 15) {
-        category = "Малка система";
-        pricePerKwp = priceSmall;
-      } else if (kwp <= 50) {
-        category = "Средна система";
-        pricePerKwp = priceMedium;
-      } else {
-        category = "Голяма система";
-        pricePerKwp = priceLarge;
-      }
+<div style="text-align:right">№ ${Date.now()}</div>
 
-      const basePrice = kwp * pricePerKwp;
-      const yearlyProduction = kwp * specificYield;
+<h2 style="text-align:center">БЮДЖЕТНА ОФЕРТА</h2>
 
-      const usedNoBat = yearlyProduction * (selfUseNoBattery / 100);
-      const savingsNoBat = usedNoBat * priceKwh;
-      const paybackNoBat = savingsNoBat > 0 ? basePrice / savingsNoBat : 0;
-      const dynamicNoBat = dynamicPayback(basePrice, savingsNoBat, energyGrowth);
-      const profit25NoBat = (savingsNoBat * 25) - basePrice;
+Уважаеми ${client},<br><br>
 
-      const totalWithBat = basePrice + batteryPrice;
-      const usedWithBat = yearlyProduction * (selfUseWithBattery / 100);
-      const savingsWithBat = usedWithBat * priceKwh;
-      const paybackWithBat = savingsWithBat > 0 ? totalWithBat / savingsWithBat : 0;
-      const dynamicWithBat = dynamicPayback(totalWithBat, savingsWithBat, energyGrowth);
-      const profit25WithBat = (savingsWithBat * 25) - totalWithBat;
+Представяме Ви оферта за изграждане на фотоволтаична система.<br><br>
 
-      let recommended = "";
+<b>Обект:</b> ${project}<br><br>
 
-      if (paybackNoBat + 3 < paybackWithBat) {
-        recommended = "Препоръчано решение: БЕЗ батерия – по-добра възвръщаемост.";
-      } else if (profit25WithBat > profit25NoBat && paybackWithBat <= paybackNoBat + 3) {
-        recommended = "Препоръчано решение: С батерия – по-висока дългосрочна печалба и по-добро самопотребление.";
-      } else {
-        recommended = "Препоръчано решение: БЕЗ батерия – по-балансиран вариант към момента.";
-      }
+<b>Мощност:</b> ${d.kwp.toFixed(2)} kWp<br><br>
 
-      const noBatBetter = paybackNoBat <= paybackWithBat;
-      const withBatBetter = !noBatBetter;
+<b>ОБЩА СУМА:</b> ${d.base.toFixed(2)} € без ДДС<br><br>
 
-      const dynamicNoBatText = dynamicNoBat >= 50 ? ">50 години" : `${dynamicNoBat} години`;
-      const dynamicWithBatText = dynamicWithBat >= 50 ? ">50 години" : `${dynamicWithBat} години`;
+<b>Начин на плащане:</b><br>
+50% аванс / 50% при завършване<br><br>
 
-      document.getElementById("info").innerText =
-        `Тип обект: ${objectType === "household" ? "Битов" : "Промишлен"} | Категория: ${category} | Цена на тока: ${priceKwh.toFixed(2)} €/kWh`;
+<b>Валидност:</b> 30 дни<br><br>
 
-      document.getElementById("result").innerHTML = `
-        <div class="metric"><strong>Мощност:</strong> ${kwp.toFixed(2)} kWp</div>
-        <div class="metric"><strong>Цена на категория:</strong> ${pricePerKwp.toFixed(0)} €/kWp</div>
-        <div class="metric"><strong>Базова цена на системата:</strong> ${eur(basePrice)}</div>
-        <div class="metric"><strong>Годишно производство:</strong> ${yearlyProduction.toFixed(0)} kWh</div>
-        <div class="metric"><strong>Поскъпване на тока:</strong> ${energyGrowth.toFixed(1)} % / год.</div>
+${date}<br><br>
 
-        <div class="card ${noBatBetter ? 'good' : 'bad'}">
-          <div class="title-row">❌ Без батерия</div>
-          <div class="metric"><strong>Цена:</strong> ${eur(basePrice)}</div>
-          <div class="metric"><strong>Самопотребление:</strong> ${selfUseNoBattery.toFixed(0)} %</div>
-          <div class="metric"><strong>Оползотворена енергия:</strong> ${usedNoBat.toFixed(0)} kWh</div>
-          <div class="metric"><strong>Годишна икономия:</strong> ${eur(savingsNoBat)}</div>
-          <div class="metric"><strong>Опростена възвръщаемост:</strong> ${years(paybackNoBat)}</div>
-          <div class="metric"><strong>Динамична възвръщаемост:</strong> ${dynamicNoBatText}</div>
-          <div class="metric"><strong>Печалба за 25 години:</strong> ${eur(profit25NoBat)}</div>
-        </div>
+С уважение,<br>
+инж. Георги Сотиров
 
-        <div class="card ${withBatBetter ? 'good' : 'bad'}">
-          <div class="title-row">🔋 С батерия</div>
-          <div class="metric"><strong>Цена:</strong> ${eur(totalWithBat)}</div>
-          <div class="metric"><strong>Самопотребление:</strong> ${selfUseWithBattery.toFixed(0)} %</div>
-          <div class="metric"><strong>Оползотворена енергия:</strong> ${usedWithBat.toFixed(0)} kWh</div>
-          <div class="metric"><strong>Годишна икономия:</strong> ${eur(savingsWithBat)}</div>
-          <div class="metric"><strong>Опростена възвръщаемост:</strong> ${years(paybackWithBat)}</div>
-          <div class="metric"><strong>Динамична възвръщаемост:</strong> ${dynamicWithBatText}</div>
-          <div class="metric"><strong>Печалба за 25 години:</strong> ${eur(profit25WithBat)}</div>
-        </div>
+</body></html>
+`);
 
-        <div class="recommendation">
-          <strong>${recommended}</strong>
-        </div>
-      `;
-    }
+win.print();
+}
 
-    updateObjectType();
-  </script>
+updateObjectType();
+
+</script>
+
 </body>
 </html>
