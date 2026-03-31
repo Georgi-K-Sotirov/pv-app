@@ -3,107 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
   <title>PV Калкулатор</title>
-  
+
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  
   <meta name="theme-color" content="#2e7d32">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="PV Калкулатор">
-</head>
-<style>
-body {
-    font-family: Arial;
-    background: #f2f2f2;
-    padding: 15px;
-}
-.container {
-    max-width: 500px;
-    margin: auto;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-}
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0 15px;
-    font-size: 16px;
-}
-button {
-    width: 100%;
-    padding: 12px;
-    font-size: 18px;
-    background: #2e7d32;
-    color: white;
-    border: none;
-    border-radius: 8px;
-}
-.result {
-    margin-top: 15px;
-    background: #eee;
-    padding: 10px;
-    white-space: pre-line;
-}
-</style>
-</head>
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #efefef;
+      margin: 0;
+      padding: 12px;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin: 0 0 14px 0;
+      font-size: 28px;
+    }
+
+    h3 {
+      margin: 18px 0 10px;
+      font-size: 18px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 17px;
+      border: 1px solid #999;
+      border-radius: 6px;
+      background: white;
+    }
+
+    input:disabled {
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      font-size: 22px;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .info {
+      margin-top: 10px;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .result {
+      margin-top: 18px;
+      background: #f3f3f3;
+      border-radius: 10px;
+      padding: 14px;
+      white-space: pre-line;
+      min-height: 180px;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .section {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
 <body>
+  <div class="container">
+    <h2>PV Калкулатор</h2>
 
-<div class="container">
+    <h3>1) Покрив</h3>
 
-<h2>PV Калкулатор</h2>
+    <label for="area">Площ (m²)</label>
+    <input id="area" value="35">
 
-<input id="area" placeholder="Площ m²" value="35">
-<input id="factor" placeholder="Използваемост" value="0.75">
-<input id="density" placeholder="Плътност" value="0.21">
+    <label for="factor">Използваемост</label>
+    <input id="factor" value="0.75">
 
-<input id="price_small" placeholder="до 15 kWp" value="1500">
-<input id="price_medium" placeholder="до 50 kWp" value="1100">
-<input id="price_large" placeholder="над 50 kWp" value="950">
+    <label for="density">Плътност (kWp/m²)</label>
+    <input id="density" value="0.21">
+    <div class="small">Примерна реалистична стойност: 0.18 – 0.22</div>
 
-<select id="battery">
-<option value="yes">С батерия</option>
-<option value="no">Без батерия</option>
-</select>
+    <h3>2) Цени по категории</h3>
 
-<input id="battery_price" value="5000">
-<input id="price_kwh" value="0.13">
+    <label for="price_small">Цена до 15 kWp (€/kWp)</label>
+    <input id="price_small" value="1500">
 
-<button onclick="calc()">Смятай</button>
+    <label for="price_medium">Цена до 50 kWp (€/kWp)</label>
+    <input id="price_medium" value="1100">
 
-<div class="result" id="result"></div>
+    <label for="price_large">Цена над 50 kWp (€/kWp)</label>
+    <input id="price_large" value="950">
 
-</div>
+    <h3>3) Батерия</h3>
 
-<script>
-function calc() {
-let kwp = area.value * factor.value * density.value;
+    <label for="battery">Конфигурация</label>
+    <select id="battery">
+      <option value="yes">С батерия</option>
+      <option value="no">Без батерия</option>
+    </select>
 
-let price = kwp <= 15 ? price_small.value :
-            kwp <= 50 ? price_medium.value :
-            price_large.value;
+    <label for="battery_price">Цена батерия (€)</label>
+    <input id="battery_price" value="5000">
 
-let total = kwp * price;
+    <h3>4) Консумация</h3>
 
-let self = battery.value == "yes" ? 0.75 : 0.45;
+    <label for="object_type">Тип обект</label>
+    <select id="object_type" onchange="updateObjectType()">
+      <option value="household">Битов</option>
+      <option value="industrial">Промишлен</option>
+    </select>
 
-if (battery.value == "yes") total += +battery_price.value;
+    <label for="price_kwh">Цена ток (€/kWh)</label>
+    <input id="price_kwh" value="0.13">
 
-let yearly = kwp * 1350;
-let savings = yearly * self * price_kwh.value;
+    <label for="specific_yield">Специфично производство (kWh/kWp/год.)</label>
+    <input id="specific_yield" value="1350">
 
-result.innerText =
-`kWp: ${kwp.toFixed(2)}
-Цена: ${total.toFixed(0)} €
-Икономия: ${savings.toFixed(0)} €
-Възвръщаемост: ${(total/savings).toFixed(1)} г.`;
-}
-</script>
+    <label for="self_use_no_battery">Самопотребление без батерия (%)</label>
+    <input id="self_use_no_battery" value="45">
 
+    <label for="self_use_with_battery">Самопотребление с батерия (%)</label>
+    <input id="self_use_with_battery" value="75">
+
+    <button type="button" onclick="calc()">Смятай</button>
+
+    <p class="info" id="info"></p>
+    <div class="result" id="result">Натисни „Смятай“.</div>
+  </div>
+
+  <script>
+    function updateObjectType() {
+      const objectType = document.getElementById("object_type").value;
+      const priceKwh = document.getElementById("price_kwh");
+
+      if (objectType === "household") {
+        priceKwh.value = "0.13";
+        priceKwh.disabled = true;
+      } else {
+        priceKwh.value = "0.22";
+        priceKwh.disabled = false;
+      }
+    }
+
+    function calc() {
+      const area = parseFloat(document.getElementById("area").value) || 0;
+      const factor = parseFloat(document.getElementById("factor").value) || 0;
+      const density = parseFloat(document.getElementById("density").value) || 0;
+
+      const priceSmall = parseFloat(document.getElementById("price_small").value) || 0;
+      const priceMedium = parseFloat(document.getElementById("price_medium").value) || 0;
+      const priceLarge = parseFloat(document.getElementById("price_large").value) || 0;
+
+      const battery = document.getElementById("battery").value;
+      const batteryPrice = parseFloat(document.getElementById("battery_price").value) || 0;
+
+      const objectType = document.getElementById("object_type").value;
+      const priceKwh = parseFloat(document.getElementById("price_kwh").value) || 0;
+      const specificYield = parseFloat(document.getElementById("specific_yield").value) || 0;
+      const selfUseNoBattery = parseFloat(document.getElementById("self_use_no_battery").value) || 0;
+      const selfUseWithBattery = parseFloat(document.getElementById("self_use_with_battery").value) || 0;
+
+      const kwp = area * factor * density;
+
+      let category = "";
+      let pricePerKwp = 0;
+
+      if (kwp <= 15) {
+        category = "Малка система";
+        pricePerKwp = priceSmall;
+      } else if (kwp <= 50) {
+        category = "Средна система";
+        pricePerKwp = priceMedium;
+      } else {
+        category = "Голяма система";
+        pricePerKwp = priceLarge;
+      }
+
+      let total = kwp * pricePerKwp;
+
+      let selfUsePct = 0;
+      let batteryText = "";
+
+      if (battery === "yes") {
+        selfUsePct = selfUseWithBattery;
+        total += batteryPrice;
+        batteryText = "С батерия";
+      } else {
+        selfUsePct = selfUseNoBattery;
+        batteryText = "Без батерия";
+      }
+
+      const yearlyProduction = kwp * specificYield;
+      const usedEnergy = yearlyProduction * (selfUsePct / 100);
+      const extraEnergy = yearlyProduction - usedEnergy;
+      const yearlySavings = usedEnergy * priceKwh;
+      const monthlySavings = yearlySavings / 12;
+      const payback = yearlySavings > 0 ? total / yearlySavings : 0;
+
+      document.getElementById("info").innerText =
+        battery === "yes"
+          ? "С батерия – използва се самопотреблението с батерия."
+          : "Без батерия – използва се самопотреблението без батерия.";
+
+      document.getElementById("result").innerText =
+`Категория: ${category}
+Тип обект: ${objectType === "household" ? "Битов" : "Промишлен"}
+Система: ${batteryText}
+
+Мощност: ${kwp.toFixed(2)} kWp
+Цена на категория: ${pricePerKwp.toFixed(0)} €/kWp
+Обща цена: ${total.toFixed(0)} €
+
+Годишно производство: ${yearlyProduction.toFixed(0)} kWh
+Самопотребление: ${selfUsePct.toFixed(0)} %
+Оползотворена енергия: ${usedEnergy.toFixed(0)} kWh
+Излишък / остатък: ${extraEnergy.toFixed(0)} kWh
+
+Цена на тока: ${priceKwh.toFixed(2)} €/kWh
+Годишна икономия: ${yearlySavings.toFixed(0)} €
+Средно месечна икономия: ${monthlySavings.toFixed(0)} €
+Възвръщаемост: ${payback.toFixed(1)} години`;
+    }
+
+    updateObjectType();
+  </script>
 </body>
 </html>
