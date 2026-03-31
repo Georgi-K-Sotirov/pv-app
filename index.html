@@ -105,11 +105,6 @@
       background: #fdeeee;
     }
 
-    .neutral {
-      border-color: #999;
-      background: #fafafa;
-    }
-
     .title-row {
       font-size: 20px;
       font-weight: bold;
@@ -189,6 +184,9 @@
     <label for="self_use_with_battery">Самопотребление с батерия (%)</label>
     <input id="self_use_with_battery" value="75">
 
+    <label for="energy_growth">Годишно поскъпване на тока (%)</label>
+    <input id="energy_growth" value="3">
+
     <button type="button" onclick="calc()">Смятай</button>
 
     <p class="info" id="info"></p>
@@ -217,6 +215,22 @@
       return `${v.toFixed(1)} години`;
     }
 
+    function dynamicPayback(initialCost, firstYearSaving, growthPercent) {
+      if (initialCost <= 0 || firstYearSaving <= 0) return 0;
+
+      let cumulative = 0;
+      let yearlySaving = firstYearSaving;
+      const growth = growthPercent / 100;
+
+      for (let year = 1; year <= 50; year++) {
+        cumulative += yearlySaving;
+        if (cumulative >= initialCost) return year;
+        yearlySaving *= (1 + growth);
+      }
+
+      return 50;
+    }
+
     function calc() {
       const area = parseFloat(document.getElementById("area").value) || 0;
       const factor = parseFloat(document.getElementById("factor").value) || 0;
@@ -233,6 +247,7 @@
       const specificYield = parseFloat(document.getElementById("specific_yield").value) || 0;
       const selfUseNoBattery = parseFloat(document.getElementById("self_use_no_battery").value) || 0;
       const selfUseWithBattery = parseFloat(document.getElementById("self_use_with_battery").value) || 0;
+      const energyGrowth = parseFloat(document.getElementById("energy_growth").value) || 0;
 
       const kwp = area * factor * density;
 
@@ -256,15 +271,18 @@
       const usedNoBat = yearlyProduction * (selfUseNoBattery / 100);
       const savingsNoBat = usedNoBat * priceKwh;
       const paybackNoBat = savingsNoBat > 0 ? basePrice / savingsNoBat : 0;
+      const dynamicNoBat = dynamicPayback(basePrice, savingsNoBat, energyGrowth);
       const profit25NoBat = (savingsNoBat * 25) - basePrice;
 
       const totalWithBat = basePrice + batteryPrice;
       const usedWithBat = yearlyProduction * (selfUseWithBattery / 100);
       const savingsWithBat = usedWithBat * priceKwh;
       const paybackWithBat = savingsWithBat > 0 ? totalWithBat / savingsWithBat : 0;
+      const dynamicWithBat = dynamicPayback(totalWithBat, savingsWithBat, energyGrowth);
       const profit25WithBat = (savingsWithBat * 25) - totalWithBat;
 
       let recommended = "";
+
       if (paybackNoBat + 3 < paybackWithBat) {
         recommended = "Препоръчано решение: БЕЗ батерия – по-добра възвръщаемост.";
       } else if (profit25WithBat > profit25NoBat && paybackWithBat <= paybackNoBat + 3) {
@@ -276,6 +294,9 @@
       const noBatBetter = paybackNoBat <= paybackWithBat;
       const withBatBetter = !noBatBetter;
 
+      const dynamicNoBatText = dynamicNoBat >= 50 ? ">50 години" : `${dynamicNoBat} години`;
+      const dynamicWithBatText = dynamicWithBat >= 50 ? ">50 години" : `${dynamicWithBat} години`;
+
       document.getElementById("info").innerText =
         `Тип обект: ${objectType === "household" ? "Битов" : "Промишлен"} | Категория: ${category} | Цена на тока: ${priceKwh.toFixed(2)} €/kWh`;
 
@@ -284,6 +305,7 @@
         <div class="metric"><strong>Цена на категория:</strong> ${pricePerKwp.toFixed(0)} €/kWp</div>
         <div class="metric"><strong>Базова цена на системата:</strong> ${eur(basePrice)}</div>
         <div class="metric"><strong>Годишно производство:</strong> ${yearlyProduction.toFixed(0)} kWh</div>
+        <div class="metric"><strong>Поскъпване на тока:</strong> ${energyGrowth.toFixed(1)} % / год.</div>
 
         <div class="card ${noBatBetter ? 'good' : 'bad'}">
           <div class="title-row">❌ Без батерия</div>
@@ -291,7 +313,8 @@
           <div class="metric"><strong>Самопотребление:</strong> ${selfUseNoBattery.toFixed(0)} %</div>
           <div class="metric"><strong>Оползотворена енергия:</strong> ${usedNoBat.toFixed(0)} kWh</div>
           <div class="metric"><strong>Годишна икономия:</strong> ${eur(savingsNoBat)}</div>
-          <div class="metric"><strong>Възвръщаемост:</strong> ${years(paybackNoBat)}</div>
+          <div class="metric"><strong>Опростена възвръщаемост:</strong> ${years(paybackNoBat)}</div>
+          <div class="metric"><strong>Динамична възвръщаемост:</strong> ${dynamicNoBatText}</div>
           <div class="metric"><strong>Печалба за 25 години:</strong> ${eur(profit25NoBat)}</div>
         </div>
 
@@ -301,7 +324,8 @@
           <div class="metric"><strong>Самопотребление:</strong> ${selfUseWithBattery.toFixed(0)} %</div>
           <div class="metric"><strong>Оползотворена енергия:</strong> ${usedWithBat.toFixed(0)} kWh</div>
           <div class="metric"><strong>Годишна икономия:</strong> ${eur(savingsWithBat)}</div>
-          <div class="metric"><strong>Възвръщаемост:</strong> ${years(paybackWithBat)}</div>
+          <div class="metric"><strong>Опростена възвръщаемост:</strong> ${years(paybackWithBat)}</div>
+          <div class="metric"><strong>Динамична възвръщаемост:</strong> ${dynamicWithBatText}</div>
           <div class="metric"><strong>Печалба за 25 години:</strong> ${eur(profit25WithBat)}</div>
         </div>
 
