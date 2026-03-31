@@ -179,87 +179,76 @@
       }
     }
 
-    function calc() {
-      const area = parseFloat(document.getElementById("area").value) || 0;
-      const factor = parseFloat(document.getElementById("factor").value) || 0;
-      const density = parseFloat(document.getElementById("density").value) || 0;
-
-      const priceSmall = parseFloat(document.getElementById("price_small").value) || 0;
-      const priceMedium = parseFloat(document.getElementById("price_medium").value) || 0;
-      const priceLarge = parseFloat(document.getElementById("price_large").value) || 0;
-
-      const battery = document.getElementById("battery").value;
-      const batteryPrice = parseFloat(document.getElementById("battery_price").value) || 0;
-
-      const objectType = document.getElementById("object_type").value;
-      const priceKwh = parseFloat(document.getElementById("price_kwh").value) || 0;
-      const specificYield = parseFloat(document.getElementById("specific_yield").value) || 0;
-      const selfUseNoBattery = parseFloat(document.getElementById("self_use_no_battery").value) || 0;
-      const selfUseWithBattery = parseFloat(document.getElementById("self_use_with_battery").value) || 0;
-
-      const kwp = area * factor * density;
-
-      let category = "";
-      let pricePerKwp = 0;
-
-      if (kwp <= 15) {
-        category = "Малка система";
-        pricePerKwp = priceSmall;
-      } else if (kwp <= 50) {
-        category = "Средна система";
-        pricePerKwp = priceMedium;
-      } else {
-        category = "Голяма система";
-        pricePerKwp = priceLarge;
-      }
-
-      let total = kwp * pricePerKwp;
-
-      let selfUsePct = 0;
-      let batteryText = "";
-
-      if (battery === "yes") {
-        selfUsePct = selfUseWithBattery;
-        total += batteryPrice;
-        batteryText = "С батерия";
-      } else {
-        selfUsePct = selfUseNoBattery;
-        batteryText = "Без батерия";
-      }
-
-      const yearlyProduction = kwp * specificYield;
-      const usedEnergy = yearlyProduction * (selfUsePct / 100);
-      const extraEnergy = yearlyProduction - usedEnergy;
-      const yearlySavings = usedEnergy * priceKwh;
-      const monthlySavings = yearlySavings / 12;
-      const payback = yearlySavings > 0 ? total / yearlySavings : 0;
-
-      document.getElementById("info").innerText =
-        battery === "yes"
-          ? "С батерия – използва се самопотреблението с батерия."
-          : "Без батерия – използва се самопотреблението без батерия.";
-
-      document.getElementById("result").innerText =
-`Категория: ${category}
-Тип обект: ${objectType === "household" ? "Битов" : "Промишлен"}
-Система: ${batteryText}
-
-Мощност: ${kwp.toFixed(2)} kWp
-Цена на категория: ${pricePerKwp.toFixed(0)} €/kWp
-Обща цена: ${total.toFixed(0)} €
-
-Годишно производство: ${yearlyProduction.toFixed(0)} kWh
-Самопотребление: ${selfUsePct.toFixed(0)} %
-Оползотворена енергия: ${usedEnergy.toFixed(0)} kWh
-Излишък / остатък: ${extraEnergy.toFixed(0)} kWh
-
-Цена на тока: ${priceKwh.toFixed(2)} €/kWh
-Годишна икономия: ${yearlySavings.toFixed(0)} €
-Средно месечна икономия: ${monthlySavings.toFixed(0)} €
-Възвръщаемост: ${payback.toFixed(1)} години`;
+    <script>
+  function calc() {
+    const area = parseFloat(area.value) || 0;
+    const factor = parseFloat(factor.value) || 0;
+    const density = parseFloat(density.value) || 0;
+  
+    const priceSmall = parseFloat(price_small.value) || 0;
+    const priceMedium = parseFloat(price_medium.value) || 0;
+    const priceLarge = parseFloat(price_large.value) || 0;
+  
+    const batteryPrice = parseFloat(battery_price.value) || 0;
+  
+    const objectType = object_type.value;
+    const priceKwh = parseFloat(price_kwh.value) || 0;
+    const specificYield = parseFloat(specific_yield.value) || 0;
+    const selfUseNoBattery = parseFloat(self_use_no_battery.value) || 0;
+    const selfUseWithBattery = parseFloat(self_use_with_battery.value) || 0;
+  
+    const kwp = area * factor * density;
+  
+    let category = "";
+    let pricePerKwp = 0;
+  
+    if (kwp <= 15) {
+      category = "Малка система";
+      pricePerKwp = priceSmall;
+    } else if (kwp <= 50) {
+      category = "Средна система";
+      pricePerKwp = priceMedium;
+    } else {
+      category = "Голяма система";
+      pricePerKwp = priceLarge;
     }
-
-    updateObjectType();
+  
+    const basePrice = kwp * pricePerKwp;
+  
+    const yearlyProduction = kwp * specificYield;
+  
+    // ❌ БЕЗ БАТЕРИЯ
+    const usedNoBat = yearlyProduction * (selfUseNoBattery / 100);
+    const savingsNoBat = usedNoBat * priceKwh;
+    const paybackNoBat = savingsNoBat > 0 ? basePrice / savingsNoBat : 0;
+  
+    // 🔋 С БАТЕРИЯ
+    const totalWithBat = basePrice + batteryPrice;
+    const usedWithBat = yearlyProduction * (selfUseWithBattery / 100);
+    const savingsWithBat = usedWithBat * priceKwh;
+    const paybackWithBat = savingsWithBat > 0 ? totalWithBat / savingsWithBat : 0;
+  
+    document.getElementById("result").innerText =
+  `📊 ОБЩО
+  Мощност: ${kwp.toFixed(2)} kWp
+  Категория: ${category}
+  Цена на система: ${basePrice.toFixed(0)} €
+  
+  ────────────────────
+  ❌ БЕЗ БАТЕРИЯ
+  
+  Самопотребление: ${selfUseNoBattery.toFixed(0)} %
+  Годишна икономия: ${savingsNoBat.toFixed(0)} €
+  Възвръщаемост: ${paybackNoBat.toFixed(1)} години
+  
+  ────────────────────
+  🔋 С БАТЕРИЯ
+  
+  Цена с батерия: ${totalWithBat.toFixed(0)} €
+  Самопотребление: ${selfUseWithBattery.toFixed(0)} %
+  Годишна икономия: ${savingsWithBat.toFixed(0)} €
+  Възвръщаемост: ${paybackWithBat.toFixed(1)} години`;
+  }
   </script>
 </body>
 </html>
