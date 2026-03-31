@@ -96,8 +96,22 @@ margin-top:10px;
 <input id="price_large" value="950">
 
 <h3>Батерия</h3>
-<label>Цена на батерия (€)</label>
-<input id="battery_price" value="5000">
+
+<label>Режим на батерия</label>
+<select id="battery_mode" onchange="toggleBatteryMode()">
+  <option value="auto">Автоматично по мощност</option>
+  <option value="manual">Ръчно</option>
+  <option value="none">Без батерия</option>
+</select>
+
+<label>Коефициент батерия спрямо мощност</label>
+<input id="battery_ratio" value="0.5">
+
+<label>Ръчен капацитет батерия (kWh)</label>
+<input id="battery_kwh_manual" value="5.12">
+
+<label>Цена на батерия (€/kWh)</label>
+<input id="battery_price_per_kwh" value="420">
 
 <h3>Тип обект</h3>
 <label>Тип клиент</label>
@@ -126,6 +140,23 @@ margin-top:10px;
 
 <script>
 
+function toggleBatteryMode() {
+  const mode = document.getElementById("battery_mode").value;
+  const ratio = document.getElementById("battery_ratio");
+  const manual = document.getElementById("battery_kwh_manual");
+
+  if (mode === "auto") {
+    ratio.disabled = false;
+    manual.disabled = true;
+  } else if (mode === "manual") {
+    ratio.disabled = true;
+    manual.disabled = false;
+  } else {
+    ratio.disabled = true;
+    manual.disabled = true;
+  }
+}
+
 function updateObjectType(){
 let type = object_type.value;
 if(type==="household"){
@@ -148,33 +179,58 @@ yearly*=1+(growth/100);
 return 50;
 }
 
-function getData(){
+function getData() {
+  let kwp = area.value * factor.value * density.value;
 
-let kwp = area.value * factor.value * density.value;
+  let price = kwp <= 15 ? price_small.value :
+              kwp <= 50 ? price_medium.value :
+              price_large.value;
 
-let price = kwp<=15?price_small.value:
-kwp<=50?price_medium.value:
-price_large.value;
+  let base = kwp * price;
+  let yearly = kwp * specific_yield.value;
 
-let base = kwp * price;
-let yearly = kwp * specific_yield.value;
+  const batteryMode = document.getElementById("battery_mode").value;
+  const batteryRatio = parseFloat(document.getElementById("battery_ratio").value) || 0;
+  const batteryManual = parseFloat(document.getElementById("battery_kwh_manual").value) || 0;
+  const batteryPricePerKwh = parseFloat(document.getElementById("battery_price_per_kwh").value) || 0;
 
-let usedNo = yearly * self_use_no_battery.value/100;
-let saveNo = usedNo * price_kwh.value;
+  let batteryKwh = 0;
 
-let usedBat = yearly * self_use_with_battery.value/100;
-let saveBat = usedBat * price_kwh.value;
+  if (batteryMode === "auto") {
+    batteryKwh = kwp * batteryRatio;
 
-return {
-kwp,price,base,yearly,
-saveNo,saveBat,
-payNo: base/saveNo,
-payBat: (base+ +battery_price.value)/saveBat,
-dynNo: dynamicPayback(base,saveNo,energy_growth.value),
-dynBat: dynamicPayback(base+ +battery_price.value,saveBat,energy_growth.value),
-profitNo: saveNo*25-base,
-profitBat: saveBat*25-(base+ +battery_price.value)
-};
+    // закръгляне към реални модули 5.12 kWh
+    batteryKwh = Math.ceil(batteryKwh / 5.12) * 5.12;
+  } else if (batteryMode === "manual") {
+    batteryKwh = batteryManual;
+  } else {
+    batteryKwh = 0;
+  }
+
+  let batteryTotal = batteryKwh * batteryPricePerKwh;
+
+  let usedNo = yearly * self_use_no_battery.value / 100;
+  let saveNo = usedNo * price_kwh.value;
+
+  let usedBat = yearly * self_use_with_battery.value / 100;
+  let saveBat = usedBat * price_kwh.value;
+
+  return {
+    kwp,
+    price,
+    base,
+    yearly,
+    batteryKwh,
+    batteryTotal,
+    saveNo,
+    saveBat,
+    payNo: base / saveNo,
+    payBat: (base + batteryTotal) / saveBat,
+    dynNo: dynamicPayback(base, saveNo, energy_growth.value),
+    dynBat: dynamicPayback(base + batteryTotal, saveBat, energy_growth.value),
+    profitNo: saveNo * 25 - base,
+    profitBat: saveBat * 25 - (base + batteryTotal)
+  };
 }
 
 function calc() {
@@ -225,7 +281,9 @@ function calc() {
 
     <div class="card ${withBatBetter ? 'good' : 'bad'}">
       <div><strong>🔋 С батерия</strong></div>
-      <div>Цена: ${(d.base + +battery_price.value).toFixed(0)} €</div>
+      <div>Капацитет батерия: ${d.batteryKwh.toFixed(2)} kWh</div>
+      <div>Цена на батерия: ${d.batteryTotal.toFixed(0)} €</div>
+      <div>Цена: ${(d.base + d.batteryTotal).toFixed(0)} €</div>
       <div>Самопотребление: ${parseFloat(self_use_with_battery.value).toFixed(0)} %</div>
       <div>Оползотворена енергия: ${usedBat.toFixed(0)} kWh</div>
       <div>Годишна икономия: ${d.saveBat.toFixed(0)} €</div>
@@ -233,6 +291,7 @@ function calc() {
       <div>Динамична възвръщаемост: ${dynamicBatText}</div>
       <div>Печалба за 25 години: ${d.profitBat.toFixed(0)} €</div>
     </div>
+    
 
     <div class="card good">
       <strong>${recommendation}</strong>
@@ -288,7 +347,7 @@ function generatePDF() {
   }
 
   const selectedTotalNoVat = useBatteryVariant
-    ? (d.base + (+battery_price.value || 0))
+    ? (d.base + d.batteryTotal)
     : d.base;
 
   const selectedTotalWithVat = selectedTotalNoVat * 1.20;
@@ -497,7 +556,9 @@ function generatePDF() {
         ${selectedTotalWithVat.toFixed(2)} ЕВРО с ДДС
       </div>
       <div class="muted">
-        Вариант: ${selectedVariantText} | Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
+        Вариант: ${selectedVariantText} |
+        Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
+        ${useBatteryVariant ? `| Батерия: ${d.batteryKwh.toFixed(2)} kWh` : ""}
       </div>
     </div>
 
