@@ -85,6 +85,7 @@ margin-top:10px;
 <input id="specific_yield" value="1350">
 <input id="self_use_no_battery" value="45">
 <input id="self_use_with_battery" value="75">
+<label for="energy_growth">Годишно поскъпване на тока (%)</label>
 <input id="energy_growth" value="3">
 
 <button onclick="calc()">Смятай</button>
@@ -147,30 +148,7 @@ profitBat: saveBat*25-(base+ +battery_price.value)
 };
 }
 
-function calc(){
-
-let d = getData();
-
-let better = d.payNo < d.payBat;
-
-result.innerHTML = `
-<div class="card ${better?'good':'bad'}">
-❌ Без батерия<br>
-Цена: ${d.base.toFixed(0)} €<br>
-Възвръщаемост: ${d.payNo.toFixed(1)} г.<br>
-Динамична: ${d.dynNo} г.<br>
-Печалба: ${d.profitNo.toFixed(0)} €
-</div>
-
-<div class="card ${!better?'good':'bad'}">
-🔋 С батерия<br>
-Цена: ${(d.base + +battery_price.value).toFixed(0)} €<br>
-Възвръщаемост: ${d.payBat.toFixed(1)} г.<br>
-Динамична: ${d.dynBat} г.<br>
-Печалба: ${d.profitBat.toFixed(0)} €
-</div>
-`;
-}
+client
 
 function generatePDF() {
   const d = getData();
