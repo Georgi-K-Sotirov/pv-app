@@ -207,74 +207,91 @@ function generatePDF() {
     <style>
       @page {
         size: A4;
-        margin: 22mm 18mm 22mm 18mm;
+        margin: 12mm 12mm;
       }
-
+      
       body {
-        font-family: Arial, Helvetica, sans-serif;
-        color: #111;
+        font-family: Arial;
         margin: 0;
-        line-height: 1.45;
-        font-size: 14px;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1.3;
       }
-
+      
       .top-company {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 10px;
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        margin-bottom:6px;
       }
-
+      
       .company-left {
-        font-size: 12px;
-        line-height: 1.35;
+        font-size:11px;
+        line-height:1.2;
       }
-
+      
       .company-logo {
-        height: 62px;
-        object-fit: contain;
+        height:50px;
       }
-
+      
       .out-number {
-        text-align: left;
-        margin: 10px 0 22px 0;
-        font-size: 14px;
+        margin:6px 0 10px 0;
+        font-size:13px;
       }
-
+      
       .attention {
-        margin-bottom: 28px;
-        font-size: 15px;
+        margin-bottom:12px;
       }
-
+      
       .title-block {
-        text-align: center;
-        margin-bottom: 24px;
+        text-align:center;
+        margin-bottom:12px;
       }
-
+      
       .title-block h1 {
-        font-size: 22px;
-        margin: 0 0 12px 0;
-        letter-spacing: 6px;
-        font-weight: 700;
+        font-size:18px;
+        margin:0 0 6px 0;
+        letter-spacing:4px;
       }
-
+      
       .offer-no {
-        font-size: 18px;
-        margin-bottom: 10px;
+        font-size:14px;
+        margin-bottom:4px;
       }
-
+      
       .offer-from {
-        font-size: 16px;
-        font-weight: 700;
+        font-size:14px;
       }
-
+      
       .paragraph {
-        margin-bottom: 18px;
-        text-align: justify;
+        margin-bottom:10px;
       }
-
+      
       .section-row {
-        margin-bottom: 16px;
+        margin-bottom:8px;
+      }
+      
+      .label {
+        font-weight:bold;
+      }
+      
+      .price-block {
+        margin:10px 0;
+      }
+      
+      .price-line {
+        font-size:16px;
+        font-weight:bold;
+      }
+      
+      .closing {
+        margin-top:12px;
+      }
+      
+      .sign-row {
+        margin-top:20px;
+        display:flex;
+        justify-content:space-between;
       }
 
       .label {
@@ -380,7 +397,6 @@ function generatePDF() {
         ${selectedTotalNoVat.toFixed(2)} ЕВРО без ДДС /
         ${selectedTotalWithVat.toFixed(2)} ЕВРО с ДДС
       </div>
-      <div class="muted" style="margin-top:6px;">
         Вариант: ${selectedVariantText} | Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
       </div>
     </div>
@@ -405,8 +421,7 @@ function generatePDF() {
     </div>
 
     <div class="section-row">
-      <span class="label">Приложения:</span>
-      <div class="value">Подробна ведомост с количествено-стойностна сметка;</div>
+     
     </div>
 
     <div class="section-row notes-block">
