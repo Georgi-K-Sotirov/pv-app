@@ -178,45 +178,163 @@ let d = getData();
 let client = client_name.value || "Клиент";
 let project = project_name.value || "-";
 
-let date = new Date().toLocaleDateString("bg-BG");
+let today = new Date();
+let date = today.toLocaleDateString("bg-BG");
+
+let offerNumber = "BUG" + today.getFullYear() +
+String(today.getMonth()+1).padStart(2,'0') +
+String(today.getDate()).padStart(2,'0') +
+Math.floor(Math.random()*1000);
+
+let priceNoVat = d.base;
+let priceWithVat = priceNoVat * 1.2;
 
 let win = window.open("","_blank");
 
 win.document.write(`
-<html><body style="font-family:Arial;padding:40px">
-
-<div style="text-align:right">№ ${Date.now()}</div>
-
-<h2 style="text-align:center">БЮДЖЕТНА ОФЕРТА</h2>
-
-Уважаеми ${client},<br><br>
-
-Представяме Ви оферта за изграждане на фотоволтаична система.<br><br>
-
-<b>Обект:</b> ${project}<br><br>
-
-<b>Мощност:</b> ${d.kwp.toFixed(2)} kWp<br><br>
-
-<b>ОБЩА СУМА:</b> ${d.base.toFixed(2)} € без ДДС<br><br>
-
-<b>Начин на плащане:</b><br>
-50% аванс / 50% при завършване<br><br>
-
-<b>Валидност:</b> 30 дни<br><br>
-
-${date}<br><br>
-
-С уважение,<br>
-инж. Георги Сотиров
-
-</body></html>
-`);
-
-win.print();
+<html>
+<head>
+<style>
+body {
+font-family: Arial;
+margin: 40px;
+color:#111;
+line-height:1.5;
 }
 
-updateObjectType();
+.header {
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:2px solid #000;
+padding-bottom:10px;
+margin-bottom:20px;
+}
 
+.logo {
+height:60px;
+}
+
+.title {
+text-align:center;
+margin:20px 0;
+}
+
+.section {
+margin-top:18px;
+}
+
+.bold {font-weight:bold;}
+
+.box {
+margin-top:20px;
+padding:15px;
+border:2px solid #000;
+font-size:18px;
+}
+
+.footer {
+margin-top:50px;
+display:flex;
+justify-content:space-between;
+}
+
+.small {
+font-size:13px;
+color:#444;
+margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<div>
+<b>ПИ ТИ ДЖИ ИНЖЕНЕРИНГ ООД</b><br>
+гр. Варна
+</div>
+
+<img src="icon.png" class="logo">
+</div>
+
+<div style="text-align:right">
+Изх.N: ${offerNumber}
+</div>
+
+<div class="section">
+На вниманието на: ${client}
+</div>
+
+<div class="title">
+<h2>БЮДЖЕТНА ОФЕРТА</h2>
+<div>№ ${offerNumber} / ${date}</div>
+</div>
+
+<div class="section">
+Уважаеми ${client},<br><br>
+Във връзка с Ваше запитване за изграждане на фотоволтаична система,
+имаме удоволствието да Ви представим нашата оферта:
+</div>
+
+<div class="section">
+<b>Обект:</b> ${project}<br><br>
+
+<b>Цел:</b> Изграждане на фотоволтаична система<br><br>
+
+<b>Инсталирана мощност:</b> ${d.kwp.toFixed(2)} kWp<br><br>
+
+<b>Срокове:</b> Ще бъдат уточнени в окончателната оферта
+</div>
+
+<div class="box">
+ОБЩА СУМА:<br><br>
+
+${priceNoVat.toFixed(2)} € без ДДС<br>
+${priceWithVat.toFixed(2)} € с ДДС
+</div>
+
+<div class="section">
+<b>Начин на плащане:</b><br>
+50% авансово при поръчка, 50% след въвеждане в експлоатация
+</div>
+
+<div class="section">
+<b>Банка:</b> Банка ДСК<br>
+IBAN: BG84STSA93000032207428<br>
+BIC: STSABGSF
+</div>
+
+<div class="section">
+<b>Валидност:</b> 30 календарни дни
+</div>
+
+<div class="small">
+Предложената цена е ориентировъчна и подлежи на уточнение след оглед.
+</div>
+
+<div class="footer">
+<div>
+${date}<br><br>
+инж. Георги Сотиров<br>
+Управител
+</div>
+
+<div>
+С УВАЖЕНИЕ
+</div>
+</div>
+
+</body>
+</html>
+`);
+
+win.document.close();
+
+setTimeout(()=>{
+win.print();
+},500);
+}
 </script>
 
 </body>
