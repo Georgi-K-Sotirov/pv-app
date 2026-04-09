@@ -271,7 +271,7 @@ function calc() {
     <div class="card ${noBatBetter ? 'good' : 'bad'}">
       <div><strong>❌ Без батерия</strong></div>
       <div>Цена: ${d.base.toFixed(0)} €</div>
-      <div>Цена с ДДС: ${d.base.toFixed(0)*1,2} €</div>
+      <div>Цена с ДДС: ${d.base.toFixed(0)*1.2} €</div>
       <div>Самопотребление: ${parseFloat(self_use_no_battery.value).toFixed(0)} %</div>
       <div>Оползотворена енергия: ${usedNo.toFixed(0)} kWh</div>
       <div>Годишна икономия: ${d.saveNo.toFixed(0)} €</div>
@@ -285,7 +285,7 @@ function calc() {
       <div>Капацитет батерия: ${d.batteryKwh.toFixed(2)} kWh</div>
       <div>Цена на батерия: ${d.batteryTotal.toFixed(0)} €</div>
       <div>Цена: ${(d.base + d.batteryTotal).toFixed(0)} €</div>
-      <div>Цена с ДДС: ${d.base.toFixed(0)*1,2} €</div>
+      <div>Цена с ДДС: ${d.base.toFixed(0)*1.2} €</div>
       <div>Самопотребление: ${parseFloat(self_use_with_battery.value).toFixed(0)} %</div>
       <div>Оползотворена енергия: ${usedBat.toFixed(0)} kWh</div>
       <div>Годишна икономия: ${d.saveBat.toFixed(0)} €</div>
