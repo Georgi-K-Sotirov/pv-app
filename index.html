@@ -1,6 +1,4 @@
-from pathlib import Path
-
-html = r'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
@@ -974,8 +972,3 @@ window.addEventListener("load", () => {
 
 </body>
 </html>
-'''
-
-path = Path("/mnt/data/pv_mobile_app_proforma.html")
-path.write_text(html, encoding="utf-8")
-print(path)
