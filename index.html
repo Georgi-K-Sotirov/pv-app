@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+from pathlib import Path
+
+html = r'''<!DOCTYPE html>
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
@@ -12,41 +14,69 @@
 <meta name="theme-color" content="#2e7d32">
 
 <style>
-body {font-family: Arial; background:#efefef; padding:12px;}
-.container {max-width:600px;margin:auto;background:white;padding:16px;border-radius:12px;}
-
+* { box-sizing: border-box; }
+body {font-family: Arial, sans-serif; background:#efefef; padding:12px; margin:0;}
+.container {max-width:760px;margin:auto;background:white;padding:16px;border-radius:12px;}
+h2 { margin-top:0; }
 input, select {
 width:100%;
 padding:12px;
 margin:6px 0 12px;
 font-size:16px;
+border:1px solid #bbb;
+border-radius:8px;
 }
-
 button {
 width:100%;
 padding:14px;
-font-size:20px;
+font-size:18px;
 margin-top:10px;
 border:none;
 border-radius:10px;
 color:white;
 background:#2e7d32;
 }
-
-.blue {background:#1565c0;}
-
+button.secondary { background:#555; }
+button.blue {background:#1565c0;}
+button.red {background:#b71c1c;}
+button.small-btn { font-size:14px; padding:10px; margin-top:6px; }
+.tabs { display:flex; gap:8px; margin:10px 0 18px; }
+.tabs button { margin:0; font-size:16px; padding:12px; background:#777; }
+.tabs button.active { background:#2e7d32; }
+.tab { display:none; }
+.tab.active { display:block; }
 .card {
 border:2px solid #ccc;
 padding:12px;
 border-radius:10px;
 margin-top:10px;
 }
-
 .good {border-color:green;background:#eef8ee;}
 .bad {border-color:red;background:#fdeeee;}
-
 .result {margin-top:15px;font-size:16px;}
-
+.material-row {
+border:1px solid #ccc;
+border-radius:10px;
+padding:10px;
+margin:10px 0;
+background:#fafafa;
+}
+.row-actions { display:flex; gap:8px; }
+.row-actions button { width:50%; }
+.total-box {
+background:#f2f7f2;
+border:2px solid #2e7d32;
+border-radius:10px;
+padding:12px;
+margin-top:12px;
+font-size:17px;
+line-height:1.5;
+}
+.muted { color:#666; font-size:13px; }
+@media print {
+  body { background:white; padding:0; }
+  .container, .tabs, button, input, select, label, h2, h3, .tab, .result { display:none !important; }
+}
 </style>
 </head>
 
@@ -56,6 +86,12 @@ margin-top:10px;
 
 <h2>PV Калкулатор</h2>
 
+<div class="tabs">
+  <button id="tabCalcBtn" class="active" onclick="showTab('calcTab')">Калкулатор</button>
+  <button id="tabProformaBtn" onclick="showTab('proformaTab')">Проформа</button>
+</div>
+
+<div id="calcTab" class="tab active">
 <h3>Данни за оферта</h3>
 
 <label>Обръщение</label>
@@ -132,13 +168,129 @@ margin-top:10px;
 <input id="energy_growth" value="3">
 
 <button onclick="calc()">Смятай</button>
-<button class="blue" onclick="generatePDF()">PDF оферта</button>
+<button class="blue" onclick="generateBudgetOffer()">PDF оферта</button>
 
 <div id="result" class="result"></div>
+</div>
+
+<div id="proformaTab" class="tab">
+<h3>Клиент за проформа</h3>
+
+<label>Избери запазен клиент</label>
+<select id="saved_clients" onchange="loadSelectedClient()">
+  <option value="">-- избери клиент --</option>
+</select>
+
+<label>No. проформа</label>
+<input id="proforma_no" value="0001/000001">
+
+<label>Купувач / фирма</label>
+<input id="buyer_company" placeholder="Фирма / клиент">
+
+<label>Град</label>
+<input id="buyer_city" value="гр. Варна">
+
+<label>Адрес</label>
+<input id="buyer_address" placeholder="Адрес">
+
+<label>ЕИК</label>
+<input id="buyer_eik" placeholder="ЕИК">
+
+<label>ИН по ЗДДС</label>
+<input id="buyer_vat" placeholder="BG...">
+
+<button onclick="saveClient()">Запази клиент</button>
+<button class="red" onclick="deleteClient()">Изтрий клиент</button>
+
+<h3>Шаблони материали</h3>
+<label>Избери шаблон</label>
+<select id="templates_select">
+  <option value="">-- избери шаблон --</option>
+</select>
+<button onclick="loadTemplate()">Зареди шаблон</button>
+<button class="blue" onclick="saveTemplate()">Запази текущите материали като шаблон</button>
+<button class="red" onclick="deleteTemplate()">Изтрий избрания потребителски шаблон</button>
+
+<h3>Материали</h3>
+<div class="muted">Цените служат само за смятане. В проформата към клиента се показва само списъкът с компоненти и общата сума.</div>
+<div id="materials"></div>
+
+<button onclick="addMaterialRow()">+ Добави ред материал</button>
+<button class="secondary" onclick="removeEmptyRows()">Изтрий празните редове</button>
+
+<div class="total-box">
+  <div><strong>Данъчна основа:</strong> <span id="tax_base">0,00 €</span></div>
+  <div><strong>ДДС 20%:</strong> <span id="vat_sum">0,00 €</span></div>
+  <div><strong>Общо с ДДС:</strong> <span id="total_sum">0,00 €</span></div>
+</div>
+
+<button class="blue" onclick="generateProforma()">Проформа PDF</button>
+</div>
 
 </div>
 
 <script>
+const STORAGE_CLIENTS = "pv_app_clients_v1";
+const STORAGE_TEMPLATES = "pv_app_templates_v1";
+
+const builtInTemplates = {
+  "5 kW система": [
+    ["Инвертор", "Инвертор 5k Deye", "1", ""],
+    ["Панели", "Панели 460W Dah Solar", "12", ""],
+    ["Батерия", "Батерия DEYE SE-G5.1Pro-B 5.12 kWh", "1", ""],
+    ["Защити AC/DC", "DC защита за 1 стринг", "1", ""],
+    ["Заземяване", "Заземителни колове", "3", ""],
+    ["Конструкция", "Наземна конструкция за 5 kW", "1", ""],
+    ["Кабели AC", "Кабел 3x6", "50", ""],
+    ["Кабели DC", "DC кабели", "1", ""]
+  ],
+  "10 kW система": [
+    ["Инвертор", "Инвертор 10k Deye", "1", ""],
+    ["Панели", "Панели 460W Dah Solar", "24", ""],
+    ["Батерия", "Батерия DEYE SE-G5.1Pro-B 5.12 kWh", "2", ""],
+    ["Защити AC/DC", "DC защита за 2 стринга", "1", ""],
+    ["Заземяване", "Заземителни колове", "3", ""],
+    ["Конструкция", "Конструкция за 10 kW", "1", ""],
+    ["Кабели AC", "Кабел 3x6", "70", ""],
+    ["Кабели DC", "DC кабели", "1", ""]
+  ],
+  "15 kW система": [
+    ["Инвертор", "Инвертор 15k Deye", "1", ""],
+    ["Панели", "Панели 460W Dah Solar", "36", ""],
+    ["Батерия", "Батерия DEYE SE-G5.1Pro-B 5.12 kWh", "3", ""],
+    ["Защити AC/DC", "DC защита за 3 стринга", "1", ""],
+    ["Заземяване", "Заземителни колове", "4", ""],
+    ["Конструкция", "Конструкция за 15 kW", "1", ""],
+    ["Кабели AC", "Кабел 3x10", "90", ""],
+    ["Кабели DC", "DC кабели", "1", ""]
+  ]
+};
+
+function showTab(tabId) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+  document.getElementById(tabId).classList.add("active");
+  if (tabId === "calcTab") tabCalcBtn.classList.add("active");
+  if (tabId === "proformaTab") tabProformaBtn.classList.add("active");
+}
+
+function num(value, fallback = 0) {
+  const v = String(value ?? "").replace(",", ".").replace(/\s/g, "");
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function money(value) {
+  return Number(value || 0).toLocaleString("bg-BG", {minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+}
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
 
 function toggleBatteryMode() {
   const mode = document.getElementById("battery_mode").value;
@@ -158,49 +310,47 @@ function toggleBatteryMode() {
 }
 
 function updateObjectType(){
-let type = object_type.value;
-if(type==="household"){
-price_kwh.value=0.13;
-price_kwh.disabled=true;
-}else{
-price_kwh.value=0.22;
-price_kwh.disabled=false;
-}
+  let type = object_type.value;
+  if(type==="household"){
+    price_kwh.value=0.13;
+    price_kwh.disabled=true;
+  }else{
+    price_kwh.value=0.22;
+    price_kwh.disabled=false;
+  }
 }
 
 function dynamicPayback(cost, saving, growth){
-let cum=0;
-let yearly=saving;
-for(let y=1;y<=50;y++){
-cum+=yearly;
-if(cum>=cost) return y;
-yearly*=1+(growth/100);
-}
-return 50;
+  let cum=0;
+  let yearly=saving;
+  for(let y=1;y<=50;y++){
+    cum+=yearly;
+    if(cum>=cost) return y;
+    yearly*=1+(growth/100);
+  }
+  return 50;
 }
 
 function getData() {
-  let kwp = area.value * factor.value * density.value;
+  let kwp = num(area.value) * num(factor.value) * num(density.value);
 
-  let price = kwp <= 15 ? price_small.value :
-              kwp <= 50 ? price_medium.value :
-              price_large.value;
+  let price = kwp <= 15 ? num(price_small.value) :
+              kwp <= 50 ? num(price_medium.value) :
+              num(price_large.value);
 
   let base = kwp * price;
-  let yearly = kwp * specific_yield.value;
+  let yearly = kwp * num(specific_yield.value);
 
   const batteryMode = document.getElementById("battery_mode").value;
-  const batteryRatio = parseFloat(document.getElementById("battery_ratio").value) || 0;
-  const batteryManual = parseFloat(document.getElementById("battery_kwh_manual").value) || 0;
-  const batteryPricePerKwh = parseFloat(document.getElementById("battery_price_per_kwh").value) || 0;
+  const batteryRatio = num(document.getElementById("battery_ratio").value);
+  const batteryManual = num(document.getElementById("battery_kwh_manual").value);
+  const batteryPricePerKwh = num(document.getElementById("battery_price_per_kwh").value);
 
   let batteryKwh = 0;
 
   if (batteryMode === "auto") {
     batteryKwh = kwp * batteryRatio;
-
-    // закръгляне към реални модули 5.12 kWh
-    batteryKwh = Math.ceil(batteryKwh / 5.12) * 5.12;
+    batteryKwh = batteryKwh <= 0 ? 0 : Math.ceil(batteryKwh / 5.12) * 5.12;
   } else if (batteryMode === "manual") {
     batteryKwh = batteryManual;
   } else {
@@ -209,11 +359,11 @@ function getData() {
 
   let batteryTotal = batteryKwh * batteryPricePerKwh;
 
-  let usedNo = yearly * self_use_no_battery.value / 100;
-  let saveNo = usedNo * price_kwh.value;
+  let usedNo = yearly * num(self_use_no_battery.value) / 100;
+  let saveNo = usedNo * num(price_kwh.value);
 
-  let usedBat = yearly * self_use_with_battery.value / 100;
-  let saveBat = usedBat * price_kwh.value;
+  let usedBat = yearly * num(self_use_with_battery.value) / 100;
+  let saveBat = usedBat * num(price_kwh.value);
 
   return {
     kwp,
@@ -224,10 +374,10 @@ function getData() {
     batteryTotal,
     saveNo,
     saveBat,
-    payNo: base / saveNo,
-    payBat: (base + batteryTotal) / saveBat,
-    dynNo: dynamicPayback(base, saveNo, energy_growth.value),
-    dynBat: dynamicPayback(base + batteryTotal, saveBat, energy_growth.value),
+    payNo: saveNo > 0 ? base / saveNo : 0,
+    payBat: saveBat > 0 ? (base + batteryTotal) / saveBat : 0,
+    dynNo: dynamicPayback(base, saveNo, num(energy_growth.value)),
+    dynBat: dynamicPayback(base + batteryTotal, saveBat, num(energy_growth.value)),
     profitNo: saveNo * 25 - base,
     profitBat: saveBat * 25 - (base + batteryTotal)
   };
@@ -252,8 +402,8 @@ function calc() {
   const dynamicBatText = d.dynBat >= 50 ? ">50 години" : `${d.dynBat} г.`;
 
   const yearlyProduction = d.yearly;
-  const usedNo = yearlyProduction * (parseFloat(self_use_no_battery.value) / 100);
-  const usedBat = yearlyProduction * (parseFloat(self_use_with_battery.value) / 100);
+  const usedNo = yearlyProduction * (num(self_use_no_battery.value) / 100);
+  const usedBat = yearlyProduction * (num(self_use_with_battery.value) / 100);
 
   result.innerHTML = `
     <div style="margin-bottom:10px;">
@@ -264,15 +414,15 @@ function calc() {
       <strong>Цена на категория:</strong> ${Number(d.price).toFixed(0)} €/kWp<br>
       <strong>Базова цена на системата:</strong> ${d.base.toFixed(0)} €<br>
       <strong>Годишно производство:</strong> ${yearlyProduction.toFixed(0)} kWh<br>
-      <strong>Цена на тока:</strong> ${parseFloat(price_kwh.value).toFixed(2)} €/kWh<br>
-      <strong>Годишно поскъпване на тока:</strong> ${parseFloat(energy_growth.value).toFixed(1)} %
+      <strong>Цена на тока:</strong> ${num(price_kwh.value).toFixed(2)} €/kWh<br>
+      <strong>Годишно поскъпване на тока:</strong> ${num(energy_growth.value).toFixed(1)} %
     </div>
 
     <div class="card ${noBatBetter ? 'good' : 'bad'}">
       <div><strong>❌ Без батерия</strong></div>
       <div>Цена: ${d.base.toFixed(0)} €</div>
-      <div>Цена с ДДС: ${d.base.toFixed(0)*1.2} €</div>
-      <div>Самопотребление: ${parseFloat(self_use_no_battery.value).toFixed(0)} %</div>
+      <div>Цена с ДДС: ${(d.base*1.2).toFixed(0)} €</div>
+      <div>Самопотребление: ${num(self_use_no_battery.value).toFixed(0)} %</div>
       <div>Оползотворена енергия: ${usedNo.toFixed(0)} kWh</div>
       <div>Годишна икономия: ${d.saveNo.toFixed(0)} €</div>
       <div>Опростена възвръщаемост: ${d.payNo.toFixed(1)} години</div>
@@ -285,15 +435,14 @@ function calc() {
       <div>Капацитет батерия: ${d.batteryKwh.toFixed(2)} kWh</div>
       <div>Цена на батерия: ${d.batteryTotal.toFixed(0)} €</div>
       <div>Цена: ${(d.base + d.batteryTotal).toFixed(0)} €</div>
-      <div>Цена с ДДС: ${(d.base + d.batteryTotal).toFixed(0)*1.2} €</div>
-      <div>Самопотребление: ${parseFloat(self_use_with_battery.value).toFixed(0)} %</div>
+      <div>Цена с ДДС: ${((d.base + d.batteryTotal)*1.2).toFixed(0)} €</div>
+      <div>Самопотребление: ${num(self_use_with_battery.value).toFixed(0)} %</div>
       <div>Оползотворена енергия: ${usedBat.toFixed(0)} kWh</div>
       <div>Годишна икономия: ${d.saveBat.toFixed(0)} €</div>
       <div>Опростена възвръщаемост: ${d.payBat.toFixed(1)} години</div>
       <div>Динамична възвръщаемост: ${dynamicBatText}</div>
       <div>Печалба за 25 години: ${d.profitBat.toFixed(0)} €</div>
     </div>
-    
 
     <div class="card good">
       <strong>${recommendation}</strong>
@@ -301,15 +450,236 @@ function calc() {
   `;
 }
 
-function generatePDF() {
-  const d = getData();
+function addMaterialRow(label="", model="", qty="", unitPrice="") {
+  const row = document.createElement("div");
+  row.className = "material-row";
+  row.innerHTML = `
+    <label>Компонент</label>
+    <input class="mat-label" value="${escapeHtml(label || "Допълнително")}">
+    <label>Модел / описание</label>
+    <input class="mat-model" value="${escapeHtml(model)}">
+    <label>Брой / мярка</label>
+    <input class="mat-qty" value="${escapeHtml(qty)}">
+    <label>Ед. цена без ДДС (€)</label>
+    <input class="mat-price" value="${escapeHtml(unitPrice)}">
+    <div><strong>Общо без ДДС:</strong> <span class="mat-total">0,00 €</span></div>
+    <div class="row-actions">
+      <button class="red small-btn" onclick="this.closest('.material-row').remove(); updateMaterialTotals();">Изтрий</button>
+      <button class="secondary small-btn" onclick="duplicateRow(this)">Дублирай</button>
+    </div>
+  `;
+  materials.appendChild(row);
+  row.querySelectorAll("input").forEach(i => i.addEventListener("input", updateMaterialTotals));
+  updateMaterialTotals();
+}
 
+function duplicateRow(btn) {
+  const row = btn.closest(".material-row");
+  addMaterialRow(
+    row.querySelector(".mat-label").value,
+    row.querySelector(".mat-model").value,
+    row.querySelector(".mat-qty").value,
+    row.querySelector(".mat-price").value
+  );
+}
+
+function getMaterials() {
+  const rows = [...document.querySelectorAll(".material-row")];
+  const list = [];
+  rows.forEach(row => {
+    const label = row.querySelector(".mat-label").value.trim() || "Материал";
+    const model = row.querySelector(".mat-model").value.trim();
+    const qtyText = row.querySelector(".mat-qty").value.trim() || "1";
+    const qty = num(qtyText, 1);
+    const unitPrice = num(row.querySelector(".mat-price").value, 0);
+    const lineTotal = qty * unitPrice;
+    row.querySelector(".mat-total").textContent = money(lineTotal);
+
+    if (model || unitPrice > 0) {
+      list.push({label, model: model || "-", qtyText, qty, unitPrice, lineTotal});
+    }
+  });
+  return list;
+}
+
+function updateMaterialTotals() {
+  const list = getMaterials();
+  const base = list.reduce((s, x) => s + x.lineTotal, 0);
+  const vat = base * 0.2;
+  const total = base + vat;
+  tax_base.textContent = money(base);
+  vat_sum.textContent = money(vat);
+  total_sum.textContent = money(total);
+}
+
+function removeEmptyRows() {
+  document.querySelectorAll(".material-row").forEach(row => {
+    const model = row.querySelector(".mat-model").value.trim();
+    const price = row.querySelector(".mat-price").value.trim();
+    if (!model && !price) row.remove();
+  });
+  updateMaterialTotals();
+}
+
+function getClients() {
+  return JSON.parse(localStorage.getItem(STORAGE_CLIENTS) || "{}");
+}
+
+function setClients(clients) {
+  localStorage.setItem(STORAGE_CLIENTS, JSON.stringify(clients));
+  refreshClients();
+}
+
+function refreshClients() {
+  const clients = getClients();
+  saved_clients.innerHTML = '<option value="">-- избери клиент --</option>';
+  Object.keys(clients).sort().forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    saved_clients.appendChild(opt);
+  });
+}
+
+function saveClient() {
+  const name = buyer_company.value.trim() || client_name.value.trim();
+  if (!name) {
+    alert("Въведи име на клиент/фирма.");
+    return;
+  }
+  const clients = getClients();
+  clients[name] = {
+    company: buyer_company.value,
+    city: buyer_city.value,
+    address: buyer_address.value,
+    eik: buyer_eik.value,
+    vat: buyer_vat.value
+  };
+  setClients(clients);
+  saved_clients.value = name;
+}
+
+function loadSelectedClient() {
+  const name = saved_clients.value;
+  if (!name) return;
+  const c = getClients()[name];
+  if (!c) return;
+  buyer_company.value = c.company || name;
+  buyer_city.value = c.city || "";
+  buyer_address.value = c.address || "";
+  buyer_eik.value = c.eik || "";
+  buyer_vat.value = c.vat || "";
+}
+
+function deleteClient() {
+  const name = saved_clients.value;
+  if (!name) return;
+  const clients = getClients();
+  delete clients[name];
+  setClients(clients);
+}
+
+function getUserTemplates() {
+  return JSON.parse(localStorage.getItem(STORAGE_TEMPLATES) || "{}");
+}
+
+function setUserTemplates(t) {
+  localStorage.setItem(STORAGE_TEMPLATES, JSON.stringify(t));
+  refreshTemplates();
+}
+
+function refreshTemplates() {
+  const user = getUserTemplates();
+  templates_select.innerHTML = '<option value="">-- избери шаблон --</option>';
+  Object.keys(builtInTemplates).forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = "builtin:" + name;
+    opt.textContent = "Вграден: " + name;
+    templates_select.appendChild(opt);
+  });
+  Object.keys(user).sort().forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = "user:" + name;
+    opt.textContent = "Мой: " + name;
+    templates_select.appendChild(opt);
+  });
+}
+
+function clearMaterials() {
+  materials.innerHTML = "";
+}
+
+function loadTemplate() {
+  const val = templates_select.value;
+  if (!val) return;
+  let rows = [];
+  if (val.startsWith("builtin:")) {
+    rows = builtInTemplates[val.replace("builtin:", "")] || [];
+  } else {
+    rows = getUserTemplates()[val.replace("user:", "")] || [];
+  }
+  clearMaterials();
+  rows.forEach(r => addMaterialRow(r[0], r[1], r[2], r[3]));
+  updateMaterialTotals();
+}
+
+function saveTemplate() {
+  const name = prompt("Име на шаблона:");
+  if (!name) return;
+  const rows = getMaterials().map(x => [x.label, x.model, x.qtyText, String(x.unitPrice || "")]);
+  if (!rows.length) {
+    alert("Няма материали за запис.");
+    return;
+  }
+  const user = getUserTemplates();
+  user[name] = rows;
+  setUserTemplates(user);
+  templates_select.value = "user:" + name;
+}
+
+function deleteTemplate() {
+  const val = templates_select.value;
+  if (!val || !val.startsWith("user:")) {
+    alert("Можеш да триеш само твои шаблони.");
+    return;
+  }
+  const name = val.replace("user:", "");
+  const user = getUserTemplates();
+  delete user[name];
+  setUserTemplates(user);
+}
+
+function getBudgetSelection(d) {
+  const offerVariant = document.getElementById("offer_variant").value;
+  let useBatteryVariant = false;
+
+  if (offerVariant === "with_battery") {
+    useBatteryVariant = true;
+  } else if (offerVariant === "no_battery") {
+    useBatteryVariant = false;
+  } else {
+    useBatteryVariant = d.payBat <= d.payNo + 3 && d.profitBat >= d.profitNo;
+  }
+
+  const selectedTotalNoVat = useBatteryVariant ? (d.base + d.batteryTotal) : d.base;
+  const selectedTotalWithVat = selectedTotalNoVat * 1.20;
+  return {useBatteryVariant, selectedTotalNoVat, selectedTotalWithVat};
+}
+
+function printHtml(html) {
+  const win = window.open("", "_blank");
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 700);
+}
+
+function generateBudgetOffer() {
+  const d = getData();
   const client = document.getElementById("client_name").value || "Клиент";
   const project = document.getElementById("project_name").value || "-";
   const salutation = document.getElementById("salutation").value;
-  const offerVariant = document.getElementById("offer_variant").value;
 
-  let attention = client;
   let greeting = "";
   let attentionLabel = "";
 
@@ -329,185 +699,37 @@ function generatePDF() {
 
   const today = new Date();
   const dateStr = today.toLocaleDateString("bg-BG");
-
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, "0");
   const dd = String(today.getDate()).padStart(2, "0");
   const randomPart = String(Math.floor(Math.random() * 900) + 100);
-
   const outNumber = `${randomPart}/${dateStr}`;
   const offerNumber = `BUG${yyyy}${mm}${dd}${randomPart}`;
+  const sel = getBudgetSelection(d);
+  const selectedVariantText = sel.useBatteryVariant ? "С батерия" : "Без батерия";
 
-  let useBatteryVariant = false;
-
-  if (offerVariant === "with_battery") {
-    useBatteryVariant = true;
-  } else if (offerVariant === "no_battery") {
-    useBatteryVariant = false;
-  } else {
-    useBatteryVariant = d.payBat <= d.payNo + 3 && d.profitBat >= d.profitNo;
-  }
-
-  const selectedTotalNoVat = useBatteryVariant
-    ? (d.base + d.batteryTotal)
-    : d.base;
-
-  const selectedTotalWithVat = selectedTotalNoVat * 1.20;
-  const selectedVariantText = useBatteryVariant ? "С батерия" : "Без батерия";
-
-  const logoSrc = "icon.png";
-
-  const win = window.open("", "_blank");
-
-  win.document.write(`
+  const html = `
   <html lang="bg">
   <head>
     <meta charset="UTF-8">
     <title>Бюджетна оферта</title>
     <style>
-      @page {
-        size: A4;
-        margin: 12mm 12mm;
-      }
-      
-      body {
-        font-family: Arial;
-        margin: 0;
-        padding: 0;
-        font-size: 13px;
-        line-height: 1.3;
-      }
-      
-      .top-company {
-        display:flex;
-        justify-content:space-between;
-        align-items:flex-start;
-        margin-bottom:6px;
-      }
-      
-      .company-left {
-        font-size:11px;
-        line-height:1.2;
-      }
-      
-      .company-logo {
-        height:50px;
-      }
-      
-      .out-number {
-        margin:6px 0 10px 0;
-        font-size:13px;
-      }
-      
-      .attention {
-        margin-bottom:12px;
-      }
-      
-      .title-block {
-        text-align:center;
-        margin-bottom:12px;
-      }
-      
-      .title-block h1 {
-        font-size:18px;
-        margin:0 0 6px 0;
-        letter-spacing:4px;
-      }
-      
-      .offer-no {
-        font-size:14px;
-        margin-bottom:4px;
-      }
-      
-      .offer-from {
-        font-size:14px;
-      }
-      
-      .paragraph {
-        margin-bottom:10px;
-      }
-      
-      .section-row {
-        margin-bottom:8px;
-      }
-      
-      .label {
-        font-weight:bold;
-      }
-      
-      .price-block {
-        margin:10px 0;
-      }
-      
-      .price-line {
-        font-size:16px;
-        font-weight:bold;
-      }
-      
-      .closing {
-        margin-top:12px;
-      }
-      
-      .sign-row {
-        margin-top:20px;
-        display:flex;
-        justify-content:space-between;
-      }
-
-      .label {
-        font-weight: 700;
-        display: block;
-        margin-bottom: 4px;
-      }
-
-      .value {
-        padding-left: 0;
-      }
-
-      .price-block {
-        margin: 18px 0;
-      }
-
-      .price-line {
-        font-size: 18px;
-        font-weight: 700;
-      }
-
-      .bank-block,
-      .notes-block {
-        margin-top: 10px;
-      }
-
-      .closing {
-        margin-top: 26px;
-      }
-
-      .sign-row {
-        margin-top: 42px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-      }
-
-      .sign-left, .sign-right {
-        width: 40%;
-      }
-
-      .sign-right {
-        text-align: left;
-      }
-
-      .muted {
-        font-size: 12px;
-      }
-
-      .nowrap {
-        white-space: nowrap;
-      }
+      @page { size: A4; margin: 12mm; }
+      body { font-family: Arial; margin: 0; padding: 0; font-size: 13px; line-height: 1.3; }
+      .top-company { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+      .company-left { font-size:11px; line-height:1.2; }
+      .company-logo { height:50px; }
+      .title-block { text-align:center; margin-bottom:12px; }
+      .title-block h1 { font-size:18px; margin:0 0 6px 0; letter-spacing:4px; }
+      .label { font-weight:700; display:block; margin-bottom:4px; }
+      .section-row { margin-bottom:8px; }
+      .price-line { font-size:18px; font-weight:700; }
+      .sign-row { margin-top:42px; display:flex; justify-content:space-between; }
+      .sign-left, .sign-right { width:40%; }
+      .muted { font-size:12px; }
     </style>
   </head>
   <body>
-
     <div class="top-company">
       <div class="company-left">
         <div><strong>PTG Engineering Ltd.</strong></div>
@@ -516,113 +738,244 @@ function generatePDF() {
         <div>office@ptg-engineering.com</div>
         <div>www.ptg-engineering.com</div>
       </div>
-      <img src="${logoSrc}" class="company-logo" alt="PTG logo">
+      <img src="icon.png" class="company-logo" alt="PTG logo">
     </div>
 
-    <div class="out-number">Изх.N: ${outNumber}</div>
-
-    <div class="attention">На вниманието на: ${attentionLabel}</div>
+    <div>Изх.N: ${outNumber}</div>
+    <p>На вниманието на: ${escapeHtml(attentionLabel)}</p>
 
     <div class="title-block">
       <h1>Б Ю Д Ж Е Т Н А&nbsp; О Ф Е Р Т А</h1>
-      <div class="offer-no">№ ${offerNumber} / ${dateStr}</div>
-      <div class="offer-from">От “ПИ ТИ ДЖИ ИНЖЕНЕРИНГ” ООД- ВАРНА</div>
+      <div>№ ${offerNumber} / ${dateStr}</div>
+      <div>От “ПИ ТИ ДЖИ ИНЖЕНЕРИНГ” ООД- ВАРНА</div>
     </div>
 
-    <div class="paragraph">
-      ${greeting}<br><br>
+    <p>${escapeHtml(greeting)}<br><br>
       Във връзка с Ваше запитване за изграждане на фотоволтаична система,
       за нас е удоволствие да Ви представим нашата бюджетна оферта, както следва:
-    </div>
+    </p>
+
+    <div class="section-row"><span class="label">Обект:</span>${escapeHtml(project)}</div>
+    <div class="section-row"><span class="label">Цел:</span>Изграждане на фотоволтаична система</div>
+    <div class="section-row"><span class="label">Срокове:</span>Ще бъдат уточнени в окончателната оферта</div>
 
     <div class="section-row">
-      <span class="label">Обект:</span>
-      <div class="value">${project}</div>
-    </div>
-
-    <div class="section-row">
-      <span class="label">Цел:</span>
-      <div class="value">Изграждане на фотоволтаична система</div>
-    </div>
-
-    <div class="section-row">
-      <span class="label">Срокове:</span>
-      <div class="value">Ще бъдат уточнени в окончателната оферта</div>
-    </div>
-
-     <div class="section-row price-block">
       <span class="label">Стойност:</span>
       <div class="price-line">
-        ОБЩА СУМА:
-        ${selectedTotalNoVat.toFixed(2)} ЕВРО без ДДС /
-        ${selectedTotalWithVat.toFixed(2)} ЕВРО с ДДС
+        ОБЩА СУМА: ${sel.selectedTotalNoVat.toFixed(2)} ЕВРО без ДДС /
+        ${sel.selectedTotalWithVat.toFixed(2)} ЕВРО с ДДС
       </div>
       <div class="muted">
-        Вариант: ${selectedVariantText} |
-        Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
-        ${useBatteryVariant ? `| Батерия: ${d.batteryKwh.toFixed(2)} kWh` : ""}
+        Вариант: ${selectedVariantText} | Прогнозна мощност: ${d.kwp.toFixed(2)} kWp
+        ${sel.useBatteryVariant ? `| Батерия: ${d.batteryKwh.toFixed(2)} kWh` : ""}
       </div>
     </div>
 
     <div class="section-row">
       <span class="label">Начин на плащане:</span>
-      <div class="value">
-        50% авансово при поръчка, 50% след въвеждане на инсталацията в експлоатация
-        и подписване на приемо-предавателен протокол
-      </div>
-    </div>
-
-    <div class="section-row bank-block">
-      <div>Банков път: Банка ДСК АД,</div>
-      <div>IBAN Сметка лева: BG84STSA93000032207428,</div>
-      <div>BIC: STSABGSF;</div>
+      50% авансово при поръчка, 50% след въвеждане на инсталацията в експлоатация
+      и подписване на приемо-предавателен протокол
     </div>
 
     <div class="section-row">
-      <span class="label">Валидност на офертата:</span>
-      <div class="value">30 календарни дни</div>
+      Банков път: Банка ДСК АД,<br>
+      IBAN Сметка лева: BG84STSA93000032207428,<br>
+      BIC: STSABGSF;
     </div>
+
+    <div class="section-row"><span class="label">Валидност на офертата:</span>30 календарни дни</div>
 
     <div class="section-row">
-     
-    </div>
-
-    <div class="section-row notes-block">
       <span class="label">Забележки:</span>
-      <div class="value">
-        Предложените суми са за оборудването доставено и монтирано DDP Варна
-        (Incoterms 2015), опаковано, без начислен ДДС.
-      </div>
+      Предложените суми са за оборудването доставено и монтирано DDP Варна
+      (Incoterms 2015), опаковано, без начислен ДДС.
     </div>
 
-    <div class="closing">
-      Искрено се надяваме, че нашата оферта ще удовлетвори Вашите условия!
-    </div>
+    <p>Искрено се надяваме, че нашата оферта ще удовлетвори Вашите условия!</p>
 
     <div class="sign-row">
-      <div class="sign-left">
-        ${dateStr} г.<br>
-        гр. Варна
-      </div>
-      <div class="sign-right">
-        С УВАЖЕНИЕ:<br><br>
-        инж. Георги Сотиров<br>
-        Управител
-      </div>
+      <div class="sign-left">${dateStr} г.<br>гр. Варна</div>
+      <div class="sign-right">С УВАЖЕНИЕ:<br><br>инж. Георги Сотиров<br>Управител</div>
     </div>
-
   </body>
-  </html>
-  `);
-
-  win.document.close();
-  win.focus();
-
-  setTimeout(() => {
-    win.print();
-  }, 700);
+  </html>`;
+  printHtml(html);
 }
+
+function generateProforma() {
+  const mats = getMaterials();
+  if (!mats.length) {
+    alert("Добави поне един материал с цена.");
+    return;
+  }
+  const taxBase = mats.reduce((s, x) => s + x.lineTotal, 0);
+  const vat = taxBase * 0.2;
+  const total = taxBase + vat;
+
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("bg-BG");
+  const no = proforma_no.value || "0001/000001";
+  const buyerCompany = buyer_company.value || client_name.value || "Клиент";
+
+  const itemLines = mats.map((m, i) =>
+    `<div>${i+1}. ${escapeHtml(m.label)}: ${escapeHtml(m.model)} - ${escapeHtml(m.qtyText)} бр.</div>`
+  ).join("");
+
+  const html = `
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<title>Проформа фактура</title>
+<style>
+@page{size:A4;margin:10mm}
+body{font-family:Arial,sans-serif;font-size:13.5px;color:#111;margin:0}
+.logo{height:78px;margin-bottom:4px}
+h1{font-size:18px;margin:0 0 8px 0}
+.no{font-size:14px;margin-bottom:22px}
+table{border-collapse:collapse;width:100%}
+td,th{border:2px solid #111;padding:5px;vertical-align:top}
+.thin td,.thin th{border-width:1.6px}
+.party th{text-align:left;font-size:15px;padding:4px}
+.party td{height:105px;font-size:15px;line-height:1.35}
+.items{margin-top:20px}
+.items th{text-align:left;font-weight:bold}
+.center{text-align:center}
+.right{text-align:right}
+.bold{font-weight:bold}
+.desc-title{font-weight:bold;text-decoration:underline;margin-bottom:7px}
+.desc-lines div{margin-bottom:4px}
+.summary{margin-top:20px}
+.summary td{height:25px}
+.bank{margin-top:22px;line-height:1.45}
+.footer{margin-top:30px;font-size:13px}
+.small-company{margin-top:18px;font-size:10px;color:#285b80;line-height:1.25}
+</style>
+</head>
+<body>
+<img src="icon.png" class="logo" alt="PTG logo">
+<h1>ПРОФОРМА ФАКТУРА</h1>
+<div class="no">No.: ${escapeHtml(no)} / ${dateStr} г.</div>
+
+<table class="party">
+<tr><th>Купувач</th><th>Продавач</th></tr>
+<tr>
+<td>
+<b>${escapeHtml(buyerCompany)}</b><br>
+${escapeHtml(buyer_city.value)}<br>
+${escapeHtml(buyer_address.value)}<br>
+${buyer_eik.value ? "ЕИК: " + escapeHtml(buyer_eik.value) : ""}<br>
+${buyer_vat.value ? "ИН по ЗДДС: " + escapeHtml(buyer_vat.value) : ""}
+</td>
+<td>
+Пи Ти Джи Инженеринг ООД<br>
+гр. Варна, ул Мадара № 23<br>
+БИЦ-ИЗОТ офис 616-А<br>
+ЕИК : 208554135<br>
+ИН по ЗДДС: BG 208554135<br>
+МОЛ: Георги Сотиров
+</td>
+</tr>
+</table>
+
+<table class="items thin">
+<tr>
+<th style="width:5%">N:</th>
+<th>Наименование на стоката(услугата)</th>
+<th style="width:7%">Мяр<br>ка</th>
+<th style="width:9%">Колич<br>ество</th>
+<th style="width:14%">Ед.цена,<br>Евро</th>
+<th style="width:16%">Стойност,<br>Евро</th>
+</tr>
+<tr>
+<td class="bold">1</td>
+<td>
+<div class="desc-title">авансово плащане за изграждане на<br>фотоволтаична система състояща се от:</div>
+<div class="desc-lines">${itemLines}</div>
+</td>
+<td class="center">Бр</td>
+<td class="center bold">1</td>
+<td class="right">${money(taxBase).replace(" €","")}</td>
+<td class="right">${money(taxBase).replace(" €","")}</td>
+</tr>
+</table>
+
+<table class="summary thin">
+<tr>
+<td rowspan="3" style="width:40%">
+<b>Словом общо лв.:</b><br><br>
+${money(total)}
+</td>
+<td>Данъчна основа:</td>
+<td class="right bold">${money(taxBase).replace(" €","")}</td>
+</tr>
+<tr>
+<td>Начислен ДДС : 20%:</td>
+<td class="right bold">${money(vat).replace(" €","")}</td>
+</tr>
+<tr>
+<td class="bold">ОБЩО:</td>
+<td class="right bold">${money(total).replace(" €","")}</td>
+</tr>
+</table>
+
+<div class="bank">
+<b>Банкова сметка:</b><br>
+<b>BIC: STSABGSF</b><br>
+<b>IBAN: BG84STSA93000032207428</b><br>
+<b>Банка ДСК</b>
+</div>
+
+<div class="footer">${dateStr} г.</div>
+<div class="small-company">
+<b>PTG Engineering Ltd.</b><br><br>
+Madara Street 23 Apr 10<br>
+9010 Varna, Bulgaria<br>
+office@ptg-engineering.com<br>
+www.ptg-engineering.com
+</div>
+</body>
+</html>`;
+  printHtml(html);
+}
+
+function initDefaultMaterials() {
+  clearMaterials();
+  [
+    ["Инвертор", "", "", ""],
+    ["Панели", "", "", ""],
+    ["Батерия", "", "", ""],
+    ["Защити AC/DC", "", "", ""],
+    ["Заземяване", "", "", ""],
+    ["Конструкция", "", "", ""],
+    ["Кабели AC", "", "", ""],
+    ["Кабели DC", "", "", ""],
+    ["Транспорт", "", "", ""],
+    ["Друго", "", "", ""]
+  ].forEach(r => addMaterialRow(r[0], r[1], r[2], r[3]));
+}
+
+window.addEventListener("load", () => {
+  toggleBatteryMode();
+  updateObjectType();
+  refreshClients();
+  refreshTemplates();
+  initDefaultMaterials();
+  calc();
+
+  document.querySelectorAll("input, select").forEach(el => {
+    el.addEventListener("input", () => {
+      if (document.getElementById("calcTab").classList.contains("active")) calc();
+      updateMaterialTotals();
+    });
+  });
+});
 </script>
 
 </body>
 </html>
+'''
+
+path = Path("/mnt/data/pv_mobile_app_proforma.html")
+path.write_text(html, encoding="utf-8")
+print(path)
